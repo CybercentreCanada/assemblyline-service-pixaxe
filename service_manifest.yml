@@ -1,0 +1,54 @@
+name: Pixaxe
+version: 1
+description: >-
+  Image examination
+accepts: document/pdf|image/.*|audiovisual/.*
+rejects: empty|metadata/.*
+
+stage: CORE
+category: Static Analysis
+
+file_required: true
+timeout: 60
+disable_cache: false
+
+enabled: true
+is_external: false
+licence_count: 0
+
+config:
+  command_timeout: 5
+  run_steg_auto: False
+
+submission_params:
+  - default: false
+    name: run_steg
+    type: bool
+    value: false
+
+heuristics:
+  - heur_id: 1
+    name: Exiftool Output
+    score: 100
+    filetype:
+    description: Exiftool extracted metadata from sample
+  - heur_id: 2
+    name: Exiftool binary extract
+    score: 100
+    filetype:
+    description: Over 50 bytes extracted from Exiftool output
+  - heur_id: 3
+    name: Tesseract output
+    score: 100
+    filetype: image/
+    description: Text extracted by Tesseract from image sample
+  - heur_id: 4
+    name: Appended image data
+    score: 100
+    filetype: image/
+    description: Appended data extracted from image
+
+docker_config:
+  image: ${REGISTRY}cccs/assemblyline-service-pixaxe:latest
+  cpu_cores: 1.0
+  ram_mb: 512
