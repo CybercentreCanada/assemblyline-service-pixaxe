@@ -1,51 +1,20 @@
-from assemblyline.al.service.base import ServiceBase
-from assemblyline.al.common.heuristics import Heuristic
-from assemblyline.al.common.result import Result, ResultSection, SCORE, TAG_TYPE, TAG_WEIGHT, TEXT_FORMAT
-from assemblyline.common.charset import safe_str
-from assemblyline.common.reaper import set_death_signal
-from assemblyline.common.timeout import SubprocessTimer, TimeoutException
+from assemblyline_v4_service.common.base import ServiceBase
+from assemblyline_v4_service.common.result import Heuristic, Result, ResultSection, BODY_FORMAT
+from assemblyline.common.str_utils import safe_str
+from assemblyline_v4_service.common.utils import TimeoutException, set_death_signal
+from functools import reduce
+
+# from assemblyline.al.service.base import ServiceBase
+# from assemblyline.al.common.heuristics import Heuristic
+# from assemblyline.al.common.result import Result, ResultSection, SCORE, TAG_TYPE, TAG_WEIGHT, BODY_FORMAT
+# from assemblyline.common.charset import safe_str
+# from assemblyline.common.reaper import set_death_signal
+# from assemblyline.common.timeout import SubprocessTimer, TimeoutException
 
 from textwrap import dedent
 
-class Pixaxe(ServiceBase):
-    SERVICE_CATEGORY = 'Static Analysis'
-    SERVICE_ACCEPTS = 'document/pdf|image/.*|audiovisual/.*'
-    SERVICE_DESCRIPTION = "Image examination"
-    SERVICE_REVISION = ServiceBase.parse_revision('$Id: d0eb7eaf595bba7baa733bc58a7429ad96c5f0b8 $')
-    SERVICE_VERSION = '1'
-    SERVICE_TIMEOUT = 60
-    SERVICE_ENABLED = True
-    SERVICE_CPU_CORES = 1
-    SERVICE_RAM_MB = 512
-    SERVICE_DEFAULT_CONFIG = {
-        'COMMAND_TIMEOUT': 5,
-        'RUN_STEG_AUTO': False
-    }
-    SERVICE_DEFAULT_SUBMISSION_PARAMS = [
 
-        {
-            "default": False,
-            "name": "run_steg",
-            "type": "bool",
-            "value": False,
-        },
-    ]
-    AL_PIXAXE_001 = Heuristic("AL_PIXAXE_001", "Exiftool Output", "",
-                             dedent("""\
-                                            Exiftool extracted metadata from sample
-                                            """))
-    AL_PIXAXE_002 = Heuristic("AL_PIXAXE_002", "Exiftool binary extract", "",
-                             dedent("""\
-                                            Over 50 bytes extracted from Exiftool output
-                                            """))
-    AL_PIXAXE_003 = Heuristic("AL_PIXAXE_003", "Tesseract output", "image/",
-                             dedent("""\
-                                            Text extracted by Tesseract from image sample
-                                            """))
-    AL_PIXAXE_004 = Heuristic("AL_PIXAXE_004", "Appended image data", "image/",
-                             dedent("""\
-                                            Appended data extracted from image
-                                            """))
+class Pixaxe(ServiceBase):
     PAT_FILEMARKERS = {
         # Header, Trailer, additional methods
         'bmp': ['\x42\x4D', None, 'bmp_dump'],
@@ -62,8 +31,8 @@ class Pixaxe(ServiceBase):
         'CREATOR TOOL': 'XMP_CREATOR_TOOL'
     }
 
-    def __init__(self, cfg=None):
-        super(Pixaxe, self).__init__(cfg)
+    def __init__(self, config=None):
+        super(Pixaxe, self).__init__(config)
         self.sha = None
 
     def start(self):
@@ -72,7 +41,7 @@ class Pixaxe(ServiceBase):
     def import_service_deps(self):
         global deepcopy, hashlib, magic, os, re, struct, subprocess
         global ImageInfo, NotSupported
-        from al_services.alsvc_pixaxe.steg import ImageInfo, NotSupported
+        from pixaxe.steg import ImageInfo, NotSupported
         from copy import deepcopy
         import hashlib
         import magic
@@ -136,16 +105,16 @@ class Pixaxe(ServiceBase):
             # Size of image data, including padding -- potentially unrealiable
             sizei = struct.unpack('<I', data[34:38])[0]
             # Width in pixels
-            #wi = struct.unpack('<I', data[18:22])[0]
+            # wi = struct.unpack('<I', data[18:22])[0]
             # Height in pixels
-            #hi = struct.unpack('<I', data[22:26])[0]
+            # hi = struct.unpack('<I', data[22:26])[0]
             # Depth
-            #di = struct.unpack('<H', data[26:28])[0]
+            # di = struct.unpack('<H', data[26:28])[0]
             # Bits per pixel
-            #bpi = struct.unpack('<H', data[28:30])[0]
+            # bpi = struct.unpack('<H', data[28:30])[0]
             # Image bytes
-            #sizei = (wi*hi*di*bpi)/8
-            bmp_data = data[0:(soi+sizei)]
+            # sizei = (wi*hi*di*bpi)/8
+            bmp_data = data[0:(soi + sizei)]
             verify_bmp = self.mimetype(bmp_data, 'image')
             if not verify_bmp:
                 return data
@@ -176,7 +145,7 @@ class Pixaxe(ServiceBase):
             jtype = data[20:24]
             if jtype in ftyps:
                 file_type = ftyps[jtype]
-                print file_type
+                print(file_type)
             else:
                 return
             while True:
@@ -311,22 +280,23 @@ class Pixaxe(ServiceBase):
             Standard output and error output of command.
         """
         try:
-            with SubprocessTimer(self.cfg['COMMAND_TIMEOUT']) as timer:
-                process = timer.run(subprocess.Popen(command,
-                                                     stdout=subprocess.PIPE,
-                                                     stderr=subprocess.PIPE,
-                                                     preexec_fn=set_death_signal()))
-                process.wait()
-                stdout, stderr = process.communicate()
-                if stderr:
-                    if len(stderr) == 0:
-                        stderr = None
+            # with SubprocessTimer(self.config['COMMAND_TIMEOUT']) as timer:
+            process = subprocess.run(command,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     preexec_fn=set_death_signal(),
+                                     timeout=self.config['COMMAND_TIMEOUT'])
+            process.wait()
+            stdout, stderr = process.communicate()
+            if stderr:
+                if len(stderr) == 0:
+                    stderr = None
         except TimeoutException as e:
-            self.log.debug("Timeout exception for file {}, with process {}:" .format(self.sha, name) + e.message)
+            self.log.debug("Timeout exception for file {}, with process {}:".format(self.sha, name) + e.message)
             stdout = None
             stderr = None
         except Exception as e:
-            self.log.warning("{} failed to run on sample {}. Reason: " .format(name, self.sha) + e.message)
+            self.log.warning("{} failed to run on sample {}. Reason: ".format(name, self.sha) + e.message)
             stdout = None
             stderr = None
         return stdout, stderr
@@ -342,7 +312,7 @@ class Pixaxe(ServiceBase):
             Filtered output string, or NULL string if no usable output found.
         """
         ocr_strings = ""
-        output = "{}.txt" .format(output)
+        output = "{}.txt".format(output)
         if os.path.getsize(output) == 0:
             return False
         filtered_lines = set()
@@ -355,7 +325,7 @@ class Pixaxe(ServiceBase):
             # Test number of unique characters
             uniq_char = ''.join(set(safe_l))
             if len(uniq_char) > 5:
-                filtered_lines.add(safe_l+"\n")
+                filtered_lines.add(safe_l + "\n")
 
         if len(filtered_lines) == 0:
             return None
@@ -407,7 +377,7 @@ class Pixaxe(ServiceBase):
                                 continue
                             result.report_heuristic(self.AL_PIXAXE_002)
                             file_path = os.path.join(self.working_directory, "{}_binary_meta"
-                                                  .format(binhash[0:10]))
+                                                     .format(binhash[0:10]))
                             request.add_extracted(file_path, "Extracted binary data from ExifTools output.")
                             with open(file_path, 'wb') as unibu_file:
                                 unibu_file.write(bresult)
@@ -418,20 +388,20 @@ class Pixaxe(ServiceBase):
                     if file_info.keys()[0].upper() == 'EXIFTOOL':
                         trv_dic = False
                 if trv_dic:
-                    eres = (ResultSection(SCORE.NULL, "ExifTools Results", body_format=TEXT_FORMAT.MEMORY_DUMP))
-                    exif_res = (ResultSection(SCORE.NULL, "File Info:", body_format=TEXT_FORMAT.MEMORY_DUMP,
+                    eres = (ResultSection("ExifTools Results", body_format=BODY_FORMAT.MEMORY_DUMP))
+                    exif_res = (ResultSection("File Info:", body_format=BODY_FORMAT.MEMORY_DUMP,
                                               parent=eres))
                     recognized_ftype = True
                     for k, i in file_info.iteritems():
                         ku = k.upper()
-                        subexi_res = (ResultSection(SCORE.NULL, "::{} DATA::".format(ku),
-                                                    body_format=TEXT_FORMAT.MEMORY_DUMP, parent=exif_res))
+                        subexi_res = (ResultSection("::{} DATA::".format(ku),
+                                                    body_format=BODY_FORMAT.MEMORY_DUMP, parent=exif_res))
                         meta_list = []
                         for lk, li in i.iteritems():
                             # Output for unknown file type will not go to stderr
                             if ku == 'EXIFTOOL' and li == 'Unknown file type':
                                 recognized_ftype = False
-                                self.log.debug('File type for sample {} not supported by EXIFTOOLS' .format(self.sha))
+                                self.log.debug('File type for sample {} not supported by EXIFTOOLS'.format(self.sha))
                                 continue
                             lku = lk.upper()
                             mvalue = '{0}: {1}'.format(lk, li)
@@ -442,19 +412,17 @@ class Pixaxe(ServiceBase):
                             # Look for specific metadata to tag
                             if ku == 'COMPOSITE':
                                 if lku == 'MEGAPIXELS':
-                                    exif_res.add_tag(TAG_TYPE['IMAGE_MEGAPIXELS'],
-                                                     str(li),
-                                                     TAG_WEIGHT.LOW)
+                                    exif_res.add_tag('IMAGE_MEGAPIXELS',
+                                                     str(li))
                             if ku == 'XMP':
                                 if lku in self.XMP_TAGGED_VALUES:
-                                    exif_res.add_tag(TAG_TYPE['EXIFTOOL_{}'.format(self.XMP_TAGGED_VALUES[lku])],
-                                                     str(li),
-                                                     TAG_WEIGHT.LOW)
+                                    exif_res.add_tag('EXIFTOOL_{}'.format(self.XMP_TAGGED_VALUES[lku]),
+                                                     str(li))
                         # Create a hash of each metadata section
                         if ku not in ['COMPOSITE', 'EXIFTOOL']:
                             meta_hash = hashlib.sha1(" ".join(sorted(meta_list))).hexdigest()
-                            exif_res.add_tag(TAG_TYPE['SORTED_METADATA_HASH'],
-                                             "{}:{}".format(ku, meta_hash), TAG_WEIGHT.LOW)
+                            exif_res.add_tag('SORTED_METADATA_HASH',
+                                             "{}:{}".format(ku, meta_hash))
 
                     if recognized_ftype:
                         result.report_heuristic(self.AL_PIXAXE_001)
@@ -464,7 +432,7 @@ class Pixaxe(ServiceBase):
         supported_images = re.compile('image/(bmp|gif|jpeg|jpg|png)')
         if re.match(supported_images, request.tag):
             # Extract img info using Pillow (already available in steg.py) and determine if steg modules should be run
-            if self.cfg['RUN_STEG_AUTO'] or run_steg:
+            if self.config['RUN_STEG_AUTO'] or run_steg:
                 decloak = True
             else:
                 decloak = False
@@ -509,19 +477,19 @@ class Pixaxe(ServiceBase):
 
             if usable_out:
                 result.report_heuristic(self.AL_PIXAXE_003)
-                ores = ResultSection(SCORE.NULL, "OCR Engine detected strings in image",
-                                     body_format=TEXT_FORMAT.MEMORY_DUMP)
+                ores = ResultSection("OCR Engine detected strings in image",
+                                     body_format=BODY_FORMAT.MEMORY_DUMP)
                 ores.add_line("Text preview (up to 500 bytes):\n")
-                ores.add_line("{}" .format(usable_out[0:500]))
+                ores.add_line("{}".format(usable_out[0:500]))
                 result.add_section(ores)
 
             # Find attached data
             additional_content = self.find_additional_content(infile)
             if additional_content:
                 result.report_heuristic(self.AL_PIXAXE_004)
-                ares = (ResultSection(SCORE.LOW, "Possible Appended Content Found",
-                                      body_format=TEXT_FORMAT.MEMORY_DUMP))
-                ares.add_line("{} Bytes of content found at end of image file" .format(len(additional_content)))
+                ares = (ResultSection("Possible Appended Content Found",
+                                      body_format=BODY_FORMAT.MEMORY_DUMP))
+                ares.add_line("{} Bytes of content found at end of image file".format(len(additional_content)))
                 ares.add_line("Text preview (up to 500 bytes):\n")
                 ares.add_line("{}".format(safe_str(additional_content)[0:500]))
                 result.add_section(ares)

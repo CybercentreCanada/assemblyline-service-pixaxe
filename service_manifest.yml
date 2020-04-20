@@ -30,12 +30,12 @@ heuristics:
   - heur_id: 1
     name: Exiftool Output
     score: 100
-    filetype:
+    filetype: text/plain
     description: Exiftool extracted metadata from sample
   - heur_id: 2
     name: Exiftool binary extract
     score: 100
-    filetype:
+    filetype: text/plain
     description: Over 50 bytes extracted from Exiftool output
   - heur_id: 3
     name: Tesseract output

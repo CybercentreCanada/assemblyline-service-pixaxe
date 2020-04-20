@@ -58,10 +58,10 @@ class ImageInfo(object):
 
         if self.imode.upper() not in supported_modes:
             if not self.result:
-                print "{} image mode not currently supported for steganlaysis modules".format(self.imode)
+                print("{} image mode not currently supported for steganlaysis modules".format(self.imode))
                 exit()
             else:
-                print "not a supported mode: {}".format(self.result)
+                print("not a supported mode: {}".format(self.result))
                 raise NotSupported()
         else:
             self.channels_to_process = supported_modes[self.imode]
@@ -265,7 +265,7 @@ class ImageInfo(object):
             # If greyscale, only one set of pixels to process
             if self.channels_to_process == 1:
                 while len(pixels) != 0:
-                    print len(pixels)
+                    print(len(pixels))
                     # In bytes
                     x_location = (self.chunk * self.channels_to_process) * index / 8
                     x_points.append(x_location)
@@ -711,7 +711,7 @@ class ImageInfo(object):
                                                               body_format=TEXT_FORMAT.MEMORY_DUMP,
                                                               body=final_body))
             else:
-                print "\t {}".format(final_body)
+                print("\t {}".format(final_body))
 
         return
 
