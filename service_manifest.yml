@@ -18,7 +18,7 @@ licence_count: 0
 
 config:
   command_timeout: 5
-  run_steg_auto: False
+  run_steg_auto: true
 
 submission_params:
   - default: false
@@ -29,22 +29,22 @@ submission_params:
 heuristics:
   - heur_id: 1
     name: Exiftool Output
-    score: 100
+    score: 0
     filetype: text/plain
     description: Exiftool extracted metadata from sample
   - heur_id: 2
     name: Exiftool binary extract
-    score: 100
+    score: 0
     filetype: text/plain
     description: Over 50 bytes extracted from Exiftool output
   - heur_id: 3
     name: Tesseract output
-    score: 100
+    score: 0
     filetype: image/
     description: Text extracted by Tesseract from image sample
   - heur_id: 4
     name: Appended image data
-    score: 100
+    score: 10
     filetype: image/
     description: Appended data extracted from image
 

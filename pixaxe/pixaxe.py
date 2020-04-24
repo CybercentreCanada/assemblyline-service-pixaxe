@@ -1,17 +1,11 @@
+import hashlib, magic, os, re, struct, subprocess
+from pixaxe.steg import ImageInfo, NotSupported
+
 from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.result import Heuristic, Result, ResultSection, BODY_FORMAT
+from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.utils import TimeoutException, set_death_signal
 from functools import reduce
-
-# from assemblyline.al.service.base import ServiceBase
-# from assemblyline.al.common.heuristics import Heuristic
-# from assemblyline.al.common.result import Result, ResultSection, SCORE, TAG_TYPE, TAG_WEIGHT, BODY_FORMAT
-# from assemblyline.common.charset import safe_str
-# from assemblyline.common.reaper import set_death_signal
-# from assemblyline.common.timeout import SubprocessTimer, TimeoutException
-
-from textwrap import dedent
 
 
 class Pixaxe(ServiceBase):
@@ -37,19 +31,6 @@ class Pixaxe(ServiceBase):
 
     def start(self):
         self.log.debug("Pixaxe service started")
-
-    def import_service_deps(self):
-        global deepcopy, hashlib, magic, os, re, struct, subprocess
-        global ImageInfo, NotSupported
-        from pixaxe.steg import ImageInfo, NotSupported
-        from copy import deepcopy
-        import hashlib
-        import magic
-        import os
-        import re
-        import struct
-        import subprocess
-        return
 
     @staticmethod
     def getfromdict(data, mapList):
@@ -99,10 +80,11 @@ class Pixaxe(ServiceBase):
         Returns:
             BMP data if discovered, or original data.
         """
+        # noinspection PyBroadException
         try:
             # Byte offset to start of image
             soi = struct.unpack('<I', data[10:14])[0]
-            # Size of image data, including padding -- potentially unrealiable
+            # Size of image data, including padding -- potentially unreliable
             sizei = struct.unpack('<I', data[34:38])[0]
             # Width in pixels
             # wi = struct.unpack('<I', data[18:22])[0]
@@ -181,7 +163,7 @@ class Pixaxe(ServiceBase):
         """
         with open(alfile, 'rb') as f:
             data = f.read()
-        for ftype, tinfo in self.PAT_FILEMARKERS.iteritems():
+        for ftype, tinfo in iter(self.PAT_FILEMARKERS.items()):
 
             # Build up the regex
             if tinfo[1] is not None:
@@ -190,7 +172,7 @@ class Pixaxe(ServiceBase):
                 embed_regex = re.compile(tinfo[0] + '.+', re.DOTALL)
 
             # Find the pattern that should match the image.
-            img_match = re.match(embed_regex, data)
+            img_match = re.match(embed_regex, str(data))
             if img_match:
                 img_data = img_match.group()
                 # Go to extraction module if there is one
@@ -198,10 +180,10 @@ class Pixaxe(ServiceBase):
                     img_data = getattr(self, tinfo[2])(img_data)
 
                 # Otherwise extract data as-is (regex is considered good enough)
-                leftovers = data.replace(img_data, "")
+                leftovers = data.replace(img_data, b"")
 
                 # Remove trailing NULL bytes
-                leftovers = re.sub('[\x00]*$', '', leftovers)
+                leftovers = re.sub(b'[\x00]*$', b'', leftovers)
 
                 if len(leftovers) > 15:
                     return leftovers
@@ -241,7 +223,7 @@ class Pixaxe(ServiceBase):
         cmd = ["exiftool", "-b", "-{}".format(k.replace(' ', "")), infile]
         return self.process(command=cmd, name="exiftool extract")
 
-    def tesseract_call(self, file_path, outfile):
+    def tesseract_call(self, infile, outfile):
         """Runs command-line tool Tesseract. Arguments:
 
         Args:
@@ -251,7 +233,7 @@ class Pixaxe(ServiceBase):
         Returns:
             Standard output and error output of command.
         """
-        cmd = ['tesseract', file_path, outfile]
+        cmd = ['tesseract', infile, outfile]
         # Process the command and save the csv result in the result object
         return self.process(command=cmd, name="tesseract")
 
@@ -280,23 +262,21 @@ class Pixaxe(ServiceBase):
             Standard output and error output of command.
         """
         try:
-            # with SubprocessTimer(self.config['COMMAND_TIMEOUT']) as timer:
             process = subprocess.run(command,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      preexec_fn=set_death_signal(),
-                                     timeout=self.config['COMMAND_TIMEOUT'])
-            process.wait()
-            stdout, stderr = process.communicate()
+                                     timeout=self.config['command_timeout'])
+            stdout, stderr = process.stdout, process.stderr
             if stderr:
                 if len(stderr) == 0:
                     stderr = None
         except TimeoutException as e:
-            self.log.debug("Timeout exception for file {}, with process {}:".format(self.sha, name) + e.message)
+            self.log.debug("Timeout exception for file {}, with process {}:".format(self.sha, name) + str(e))
             stdout = None
             stderr = None
         except Exception as e:
-            self.log.warning("{} failed to run on sample {}. Reason: ".format(name, self.sha) + e.message)
+            self.log.warning("{} failed to run on sample {}. Reason: ".format(name, self.sha) + str(e))
             stdout = None
             stderr = None
         return stdout, stderr
@@ -317,7 +297,7 @@ class Pixaxe(ServiceBase):
             return False
         filtered_lines = set()
         filtered_output = os.path.join(self.working_directory, "filtered_output.txt")
-        with open(output, 'rb') as f:
+        with open(output, 'r') as f:
             lines = f.readlines()
 
         for l in lines:
@@ -330,7 +310,7 @@ class Pixaxe(ServiceBase):
         if len(filtered_lines) == 0:
             return None
 
-        with open(filtered_output, 'wb') as f:
+        with open(filtered_output, 'w') as f:
             f.writelines(filtered_lines)
 
         for fl in filtered_lines:
@@ -341,10 +321,11 @@ class Pixaxe(ServiceBase):
 
     def execute(self, request):
         """Main Module. See README for details."""
+        global imginfo
         result = Result()
         request.result = result
         self.sha = request.sha256
-        infile = request.download()
+        infile = request.file_path
         run_steg = request.get_param('run_steg')
 
         bin_extracted = set()
@@ -353,19 +334,21 @@ class Pixaxe(ServiceBase):
         stdout, stderr = self.call_exiftools(infile)
         file_info = {}
 
+        t_encoded = b"\t"
         if stdout:
-            for li in stdout.split("\n"):
-                if "\t" in li:
-                    if li.split("\t")[2]:
-                        if self.getfromdict(file_info, [li.split("\t")[0]]):
-                            self.setindict(file_info, [li.split("\t")[0], li.split("\t")[1]], li.split("\t")[2])
+            for li in stdout.split(b"\n"):
+                if t_encoded in li:
+                    if li.split(t_encoded)[2]:
+                        if self.getfromdict(file_info, [li.split(t_encoded)[0]]):
+                            self.setindict(file_info, [li.split(t_encoded)[0], li.split(t_encoded)[1]],
+                                           li.split(t_encoded)[2])
                         else:
-                            self.setindict(file_info, [li.split("\t")[0]], {li.split("\t")[1]: li.split("\t")[2]})
-
+                            self.setindict(file_info, [li.split(t_encoded)[0]],
+                                           {li.split(t_encoded)[1]: li.split(t_encoded)[2]})
             # Extract any binary information over 50 bytes
-            for k, i in file_info.iteritems():
-                for sk, si in i.iteritems():
-                    if si.startswith("(Binary data"):
+            for k, i in iter(file_info.items()):
+                for sk, si in iter(i.items()):
+                    if si.startswith(b"(Binary data"):
                         bresult, stderr = self.call_exiftools_extract(infile, sk)
                         if bresult:
                             binhash = hashlib.sha256(bresult).hexdigest()
@@ -373,66 +356,68 @@ class Pixaxe(ServiceBase):
                                 continue
                             bin_extracted.add(binhash)
                             # space\carraige return\new line\null\0
-                            if len(bresult.rstrip('0 \t\r\n\0')) < 50:
+                            if len(bresult.rstrip(b'0 \t\r\n\0')) < 50:
                                 continue
-                            result.report_heuristic(self.AL_PIXAXE_002)
-                            file_path = os.path.join(self.working_directory, "{}_binary_meta"
-                                                     .format(binhash[0:10]))
-                            request.add_extracted(file_path, "Extracted binary data from ExifTools output.")
+                            file_name = "{}_binary_meta".format(binhash[0:10])
+                            file_path = os.path.join(self.working_directory, file_name)
+                            request.add_extracted(file_path, file_name, "Extracted binary data from ExifTools output.")
                             with open(file_path, 'wb') as unibu_file:
                                 unibu_file.write(bresult)
 
             if not stderr:
                 trv_dic = True
                 if len(file_info.keys()) == 1:
-                    if file_info.keys()[0].upper() == 'EXIFTOOL':
+                    if list(file_info.keys())[0].upper() == 'EXIFTOOL':
                         trv_dic = False
                 if trv_dic:
                     eres = (ResultSection("ExifTools Results", body_format=BODY_FORMAT.MEMORY_DUMP))
                     exif_res = (ResultSection("File Info:", body_format=BODY_FORMAT.MEMORY_DUMP,
                                               parent=eres))
                     recognized_ftype = True
-                    for k, i in file_info.iteritems():
-                        ku = k.upper()
+                    for k, i in iter(file_info.items()):
+                        ku = k.decode().upper()
                         subexi_res = (ResultSection("::{} DATA::".format(ku),
                                                     body_format=BODY_FORMAT.MEMORY_DUMP, parent=exif_res))
                         meta_list = []
-                        for lk, li in i.iteritems():
+                        for lk, li in iter(i.items()):
                             # Output for unknown file type will not go to stderr
-                            if ku == 'EXIFTOOL' and li == 'Unknown file type':
+                            if ku == "EXIFTOOL" and li == 'Unknown file type':
                                 recognized_ftype = False
                                 self.log.debug('File type for sample {} not supported by EXIFTOOLS'.format(self.sha))
                                 continue
-                            lku = lk.upper()
-                            mvalue = '{0}: {1}'.format(lk, li)
+                            lku = lk.decode().upper()
+                            mvalue = '{0}: {1}'.format(lk.decode(), li.decode())
                             subexi_res.add_line(mvalue)
                             # Take out dates from meta hash (calculated below)
                             if 'date' not in mvalue.lower():
                                 meta_list.append(mvalue)
                             # Look for specific metadata to tag
-                            if ku == 'COMPOSITE':
-                                if lku == 'MEGAPIXELS':
-                                    exif_res.add_tag('IMAGE_MEGAPIXELS',
-                                                     str(li))
-                            if ku == 'XMP':
+                            if ku == "COMPOSITE":
+                                if lku == "MEGAPIXELS":
+                                    exif_res.add_tag("file.img.mega_pixels",
+                                                     li)
+                            if ku == "XMP":
                                 if lku in self.XMP_TAGGED_VALUES:
-                                    exif_res.add_tag('EXIFTOOL_{}'.format(self.XMP_TAGGED_VALUES[lku]),
-                                                     str(li))
+                                    field = self.XMP_TAGGED_VALUES[lku].replace("XMP_","").lower()
+                                    exif_res.add_tag("file.img.exif_tool.{}".format(field),
+                                                     li)
                         # Create a hash of each metadata section
-                        if ku not in ['COMPOSITE', 'EXIFTOOL']:
-                            meta_hash = hashlib.sha1(" ".join(sorted(meta_list))).hexdigest()
-                            exif_res.add_tag('SORTED_METADATA_HASH',
+                        if ku not in ["COMPOSITE", "EXIFTOOL"]:
+                            meta_list.sort()
+                            joined_list = (" ".join(meta_list)).encode()
+                            meta_hash = hashlib.sha1(joined_list).hexdigest()
+                            exif_res.add_tag("file.img.sorted_metadata_hash",
                                              "{}:{}".format(ku, meta_hash))
 
                     if recognized_ftype:
-                        result.report_heuristic(self.AL_PIXAXE_001)
+                        eres.set_heuristic(1)
                         result.add_section(eres)
 
         # Run image-specific modules
         supported_images = re.compile('image/(bmp|gif|jpeg|jpg|png)')
-        if re.match(supported_images, request.tag):
+        if re.match(supported_images, request.file_type):
             # Extract img info using Pillow (already available in steg.py) and determine if steg modules should be run
-            if self.config['RUN_STEG_AUTO'] or run_steg:
+            if self.config['run_steg_auto'] or run_steg:
                 decloak = True
             else:
                 decloak = False
@@ -449,7 +434,7 @@ class Pixaxe(ServiceBase):
 
             if stdout or stderr:
                 # Assess Tesseract warnings
-                if "pix too small" in stderr:
+                if b"pix too small" in stderr:
                     # Make the image larger with convert command
                     c_outfile = os.path.join(self.working_directory, 'enlrg_img')
                     c_stdout, c_stderr = self.convert_img(infile, c_outfile)
@@ -476,26 +461,26 @@ class Pixaxe(ServiceBase):
                 usable_out = self.assess_output(outfile, request)
 
             if usable_out:
-                result.report_heuristic(self.AL_PIXAXE_003)
                 ores = ResultSection("OCR Engine detected strings in image",
                                      body_format=BODY_FORMAT.MEMORY_DUMP)
                 ores.add_line("Text preview (up to 500 bytes):\n")
                 ores.add_line("{}".format(usable_out[0:500]))
+                ores.set_heuristic(3)
                 result.add_section(ores)
 
             # Find attached data
             additional_content = self.find_additional_content(infile)
             if additional_content:
-                result.report_heuristic(self.AL_PIXAXE_004)
                 ares = (ResultSection("Possible Appended Content Found",
                                       body_format=BODY_FORMAT.MEMORY_DUMP))
                 ares.add_line("{} Bytes of content found at end of image file".format(len(additional_content)))
                 ares.add_line("Text preview (up to 500 bytes):\n")
                 ares.add_line("{}".format(safe_str(additional_content)[0:500]))
+                ares.set_heuristic(4)
                 result.add_section(ares)
-                file_path = os.path.join(self.working_directory, "{}_appended_img_content"
-                                         .format(hashlib.sha256(additional_content).hexdigest()[0:10]))
-                request.add_extracted(file_path, "Carved content found at end of image.")
+                file_name = "{}_appended_img_content".format(hashlib.sha256(additional_content).hexdigest()[0:10])
+                file_path = os.path.join(self.working_directory, file_name)
+                request.add_extracted(file_path, file_name, "Carved content found at end of image.")
                 with open(file_path, 'wb') as unibu_file:
                     unibu_file.write(additional_content)
 

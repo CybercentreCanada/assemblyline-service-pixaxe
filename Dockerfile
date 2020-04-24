@@ -5,11 +5,9 @@ ENV SERVICE_PATH pixaxe.pixaxe.Pixaxe
 USER root
 
 # Get required apt packages
-# Image/Science libraries for Python
-RUN apt-get update && apt-get install -y make perl apt-utils libjpeg-dev python-numpy python-scipy python-matplotlib imagemagick wget tar && rm -rf /var/lib/apt/lists/*
+# Image/Science libraries for Python & Tesseract OCR engine/ Language plug-ins
+RUN apt-get update && apt-get install -y make perl libjpeg-dev imagemagick wget tar tesseract-ocr tesseract-ocr-all && rm -rf /var/lib/apt/lists/*
 RUN pip install Pillow numpy scipy matplotlib
-# Tesseract OCR engine/ Language plug-ins
-RUN apt-get update && apt-get install -y tesseract-ocr tesseract-ocr-all && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/al_support
 
