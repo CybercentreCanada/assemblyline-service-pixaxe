@@ -410,7 +410,6 @@ class Pixaxe(ServiceBase):
                                              "{}:{}".format(ku, meta_hash))
 
                     if recognized_ftype:
-                       # eres.set_heuristic(1)
                         result.add_section(eres)
 
         # Run image-specific modules
@@ -465,8 +464,6 @@ class Pixaxe(ServiceBase):
                                      body_format=BODY_FORMAT.MEMORY_DUMP)
                 ores.add_line("Text preview (up to 500 bytes):\n")
                 ores.add_line("{}".format(usable_out[0:500]))
-                if result._score > 0:
-                    ores.set_heuristic(3)
                 result.add_section(ores)
 
             # Find attached data
@@ -477,7 +474,7 @@ class Pixaxe(ServiceBase):
                 ares.add_line("{} Bytes of content found at end of image file".format(len(additional_content)))
                 ares.add_line("Text preview (up to 500 bytes):\n")
                 ares.add_line("{}".format(safe_str(additional_content)[0:500]))
-                ares.set_heuristic(4)
+                ares.set_heuristic(2)
                 result.add_section(ares)
                 file_name = "{}_appended_img_content".format(hashlib.sha256(additional_content).hexdigest()[0:10])
                 file_path = os.path.join(self.working_directory, file_name)
@@ -487,4 +484,5 @@ class Pixaxe(ServiceBase):
 
             # Steganography modules
             if decloak:
-                imginfo.decloak()
+                if request.deep_scan:
+                    imginfo.decloak()
