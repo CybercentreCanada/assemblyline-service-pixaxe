@@ -465,7 +465,8 @@ class Pixaxe(ServiceBase):
                                      body_format=BODY_FORMAT.MEMORY_DUMP)
                 ores.add_line("Text preview (up to 500 bytes):\n")
                 ores.add_line("{}".format(usable_out[0:500]))
-                #ores.set_heuristic(3)
+                if result._score > 0:
+                    ores.set_heuristic(3)
                 result.add_section(ores)
 
             # Find attached data
