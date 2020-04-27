@@ -398,7 +398,7 @@ class Pixaxe(ServiceBase):
                                                      li)
                             if ku == "XMP":
                                 if lku in self.XMP_TAGGED_VALUES:
-                                    field = self.XMP_TAGGED_VALUES[lku].replace("XMP_","").lower()
+                                    field = self.XMP_TAGGED_VALUES[lku].replace("XMP_", "").lower()
                                     exif_res.add_tag("file.img.exif_tool.{}".format(field),
                                                      li)
                         # Create a hash of each metadata section
@@ -410,7 +410,7 @@ class Pixaxe(ServiceBase):
                                              "{}:{}".format(ku, meta_hash))
 
                     if recognized_ftype:
-                        eres.set_heuristic(1)
+                       # eres.set_heuristic(1)
                         result.add_section(eres)
 
         # Run image-specific modules
@@ -465,7 +465,7 @@ class Pixaxe(ServiceBase):
                                      body_format=BODY_FORMAT.MEMORY_DUMP)
                 ores.add_line("Text preview (up to 500 bytes):\n")
                 ores.add_line("{}".format(usable_out[0:500]))
-                ores.set_heuristic(3)
+                #ores.set_heuristic(3)
                 result.add_section(ores)
 
             # Find attached data

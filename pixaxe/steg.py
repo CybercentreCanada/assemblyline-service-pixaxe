@@ -102,6 +102,7 @@ class ImageInfo(object):
         else:
             self.chunk = 256
 
+        self.chunk = int(self.chunk)
         # total chunk bits/8
         self.chunk_bytes = (self.chunk * self.pixel_size * self.channels_to_process) / 8
 
@@ -146,7 +147,6 @@ class ImageInfo(object):
         return form, mode, size, pixels
 
     def get_colours(self, pixels, raw=False):
-
         if raw:
             colours = {self.imode[x]: pixels[x] for x in range(0, self.channels_to_process)}
             return colours
@@ -213,7 +213,7 @@ class ImageInfo(object):
             else:
                 for pi in self.binary_pixels:
                     pset = ()
-                    for ip in pi[:(self.channels_to_process)]:
+                    for ip in pi[:self.channels_to_process]:
                         if int(ip[-1]) == 0:
                             pset += (0,)
                         else:
@@ -232,9 +232,9 @@ class ImageInfo(object):
             img.save(lsb_visual_path)
             # Save to AL supplementary file. Request should therefore be set and working_directory given.
             if self.request is not None:
-                self.request.add_supplementary(lsb_visual_path, "Pixaxe LSB visual attack image")
+                self.request.add_supplementary(lsb_visual_path, "LSB_visual_attack", "Pixaxe LSB visual attack image")
                 if self.result is not None:
-                    visres = ResultSection('Visual Analysis.\t')
+                    visres = ResultSection('Visual LSB Analysis.\t')
                     visres.add_line('Visual LSB analysis successful, see extracted files.')
                     self.working_result.add_subsection(visres)
             else:
@@ -243,7 +243,6 @@ class ImageInfo(object):
 
     # 2
     def LSB_chisquare(self):
-
         pixels = self.binary_pixels
 
         x_points = []
@@ -292,7 +291,6 @@ class ImageInfo(object):
             else:
                 # If not greyscale, test each colour channel separately per chunk and then average
                 while len(pixels) != 0:
-
                     x_location = (self.chunk * self.channels_to_process) * index / 8
                     x_points.append(x_location)
 
@@ -348,7 +346,6 @@ class ImageInfo(object):
             success = False
 
         if success:
-
             if self.request is None:
                 plt.plot(x_points, y_points, 'm--', linewidth=1.0)
                 lsb_chi_path = path.join(self.working_directory, "LSB_chiqquare_attack.png")
@@ -423,11 +420,11 @@ class ImageInfo(object):
                             lsb_points_channels[c].append(lsb_avg_value)
 
                     # Average lsb counts for the colours and round two 2 decimals
-                    lsb_points.append(round(sum(lsb_counts) / (self.channels_to_process), 2))
+                    lsb_points.append(round(sum(lsb_counts) / self.channels_to_process, 2))
 
                     pixels = pixels[self.chunk:]
                     success = True
-        except Exception as e:
+        except:
             success = False
 
         if success:
@@ -462,10 +459,6 @@ class ImageInfo(object):
         https://github.com/b3dk7/StegExpose/blob/master/SamplePairs.java
         """
         success = False
-        if self.result is None:
-            show = True
-        else:
-            show = False
         width = self.isize[0]
         height = self.isize[1]
         # P =   num of pairs
@@ -588,6 +581,7 @@ class ImageInfo(object):
             # Other images
             else:
                 colour_results = {self.imode[x]: dict(results) for x in range(0, self.channels_to_process)}
+
                 # Pairs across image
                 for he in range(height):
                     for wi in range(0, width - 1, 2):
@@ -675,7 +669,7 @@ class ImageInfo(object):
                 results = colour_results
 
             success = True
-        except Exception as e:
+        except:
             success = False
 
         if success:
@@ -710,19 +704,17 @@ class ImageInfo(object):
         return
 
     def decloak(self):
-
         supported = {
-            # TODO: chisquare and LSB_couples are both causing problems. commented out until errors are fixed.
             1: {self.LSB_visual: ['CMYK', 'P', 'RGB', 'RGBA', ]},
             2: {self.LSB_chisquare: ['CMYK', 'P', 'RGB', 'RGBA', ]},
             3: {self.LSB_averages: ['CMYK', 'P', 'RGB', 'RGBA', ]},
             4: {self.LSB_couples: ['CMYK', 'P', 'RGB', 'RGBA', ]},
         }
         for k, d in sorted(iter(supported.items())):
-            for mod, l in d.iteritems():
+            for mod, l in iter(d.items()):
                 if self.imode in l:
                     mod()
-        if len(self.working_result.body) + len(self.working_result.subsections) > 0:
+        if len(self.working_result.subsections) > 0:
             self.result.add_section(self.working_result)
 
         return
