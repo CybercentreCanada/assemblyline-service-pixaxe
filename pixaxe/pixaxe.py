@@ -220,7 +220,7 @@ class Pixaxe(ServiceBase):
         Returns:
             Standard output and error output of command.
         """
-        cmd = ["exiftool", "-b", "-{}".format(k.replace(' ', "")), infile]
+        cmd = ["exiftool", "-b", "-{}".format(k.replace(' '.encode(), "".encode())), infile]
         return self.process(command=cmd, name="exiftool extract")
 
     def tesseract_call(self, infile, outfile):
