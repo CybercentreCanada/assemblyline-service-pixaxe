@@ -1,5 +1,5 @@
 name: Pixaxe
-version: 1
+version: $SERVICE_TAG
 description: >-
   Image examination
 accepts: document/pdf|image/.*|audiovisual/.*
@@ -39,6 +39,6 @@ heuristics:
     description: Appended data extracted from image
 
 docker_config:
-  image: ${REGISTRY}cccs/assemblyline-service-pixaxe:latest
+  image: ${REGISTRY}cccs/assemblyline-service-pixaxe:$SERVICE_TAG
   cpu_cores: 1.0
   ram_mb: 512
