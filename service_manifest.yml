@@ -17,7 +17,7 @@ is_external: false
 licence_count: 0
 
 config:
-  command_timeout: 5
+  command_timeout: 60
   run_steg_auto: true
 
 submission_params:
