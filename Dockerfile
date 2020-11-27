@@ -11,18 +11,6 @@ RUN pip install Pillow numpy scipy matplotlib
 
 RUN mkdir -p /opt/al_support
 
-# Download the support files from Amazon S3
-RUN wget -O /tmp/exiftool.tar.gz https://exiftool.org/Image-ExifTool-11.96.tar.gz
-RUN tar -xvf /tmp/exiftool.tar.gz -C /opt/al_support
-
-# Run installation
-WORKDIR /opt/al_support/Image-ExifTool-11.96
-RUN perl ./Makefile.PL
-RUN make install
-
-# Cleanup
-RUN rm -rf /tmp/*
-
 # Switch to assemblyline user
 USER assemblyline
 
