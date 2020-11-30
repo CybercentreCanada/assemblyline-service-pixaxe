@@ -88,7 +88,7 @@ class ImageInfo(object):
         except Exception:
             raise NotSupported()
 
-        self.binary_pixels = self.convert_binary_string(self.imode, self.channels_to_process, self.ipixels)
+        self.binary_pixels = [self.convert_binary_string(self.imode, self.channels_to_process, self.ipixels)]
         self.pixel_count = (self.isize[0] * self.isize[1] * self.channels_to_process)
 
         # Chunk size equals (#bytes*8) bits/num byte-values per pixel. Therefore if 8 bits per pixel, and you want to
@@ -111,10 +111,9 @@ class ImageInfo(object):
     @staticmethod
     def convert_binary_string(mode, channels, p):
 
-        bplist = []
         if channels == 1:
             for pi in p:
-                bplist.append('{0:08b}'.format(pi))
+                yield '{0:08b}'.format(pi)
 
         else:
             for pi in p:
@@ -123,8 +122,7 @@ class ImageInfo(object):
                     pset += ('{0:08b}'.format(ip),)
                 if mode == 'RGBA':
                     pset += ('{0:08b}'.format(pi[-1]),)
-                bplist.append(pset)
-        return bplist
+                yield pset
 
     @staticmethod
     def extract_pixels(i):

@@ -294,8 +294,6 @@ class Pixaxe(ServiceBase):
         infile = request.file_path
         run_steg = request.get_param('run_steg')
 
-        bin_extracted = set()
-
         # Run image-specific modules
         supported_images = re.compile('image/(bmp|gif|jpeg|jpg|png)')
         if re.match(supported_images, request.file_type):
@@ -349,7 +347,6 @@ class Pixaxe(ServiceBase):
                 ores.add_line("Text preview (up to 500 bytes):\n")
                 ores.add_line("{}".format(usable_out[0:500]))
                 result.add_section(ores)
-
             # Find attached data
             additional_content = self.find_additional_content(infile)
             if additional_content:
@@ -365,7 +362,6 @@ class Pixaxe(ServiceBase):
                 request.add_extracted(file_path, file_name, "Carved content found at end of image.")
                 with open(file_path, 'wb') as unibu_file:
                     unibu_file.write(additional_content)
-
             # Steganography modules
             if decloak:
                 if request.deep_scan:
