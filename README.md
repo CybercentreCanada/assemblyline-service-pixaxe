@@ -6,26 +6,13 @@ image analysis.
 **NOTE**: This service does not require you to buy any licence and is
 preinstalled and working after a default installation
 
-# Applications
-
-## Exiftool
-
-ExifTool is a platform-independent Perl library plus a command-line application for reading, writing and editing meta 
-information in a wide variety of files.
-
-The program is found here: https://www.sno.phy.queensu.ca/~phil/exiftool/ 
-
 File types currently supported:
 
 - audiovisual/*
-- document/pdf
 - image/*
 
-AL Outputs:
 
-- Extracts metadata information and tags. 
-
-- Binary output extracted to file
+# Applications
 
 ## PIL library
 
@@ -33,7 +20,7 @@ Python library
 
 AL Outputs:
 
-- Basic image information (sometimes differs from Exiftool's output)
+- Basic image information
 
 ## Tesseract
 

@@ -2,7 +2,7 @@ name: Pixaxe
 version: $SERVICE_TAG
 description: >-
   Image examination
-accepts: document/pdf|image/.*|audiovisual/.*
+accepts: image/.*|audiovisual/.*
 rejects: empty|metadata/.*
 
 stage: CORE
@@ -27,11 +27,6 @@ submission_params:
     value: false
 
 heuristics:
-  - heur_id: 1
-    name: Exiftool binary extract
-    score: 10
-    filetype: text/plain
-    description: Over 50 bytes extracted from Exiftool output
   - heur_id: 2
     name: Appended image data
     score: 10
