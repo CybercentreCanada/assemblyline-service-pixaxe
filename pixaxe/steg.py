@@ -78,7 +78,7 @@ class ImageInfo(object):
             self.result.add_section(pil_result)
 
         try:
-            self.ipixels = list(img.getdata())
+            self.ipixels = iter(img.getdata())
         except Exception:
             raise NotSupported()
 
@@ -191,36 +191,39 @@ class ImageInfo(object):
 
         return
 
+    def iter_grayscale_pixels(self):
+        for pi in self.binary_pixels:
+            if int(pi[-1]) == 0:
+                yield 0
+            else:
+                yield 255
+
+    def iter_rgba_pixels(self):
+        for pi in self.binary_pixels:
+            pset = ()
+            for ip in pi[:self.channels_to_process]:
+                if int(ip[-1]) == 0:
+                    pset += (0,)
+                else:
+                    pset += (255,)
+
+            if self.imode == 'RGBA':
+                pset += (int(pi[-1], 2),)
+            yield pset
+
     # --- LSB Functions ------------------------------------------------------------------------------------------------
     # 1
     def LSB_visual(self):
         """Convert pixel data so that each value in a pixel is either 0 (if LSB == 0) or 255 (if LSB == 1)"""
-        new_image_pixels = []
         img = Image.new(self.imode, self.isize)
         if self.working_directory is None:
             self.working_directory = path.dirname(__file__)
         try:
             if self.channels_to_process == 1:
-                for pi in self.binary_pixels:
-                    if int(pi[-1]) == 0:
-                        new_image_pixels.append(0)
-                    else:
-                        new_image_pixels.append(255)
-                img.putdata(new_image_pixels)
+                img.putdata(self.iter_grayscale_pixels())
                 success = True
             else:
-                for pi in self.binary_pixels:
-                    pset = ()
-                    for ip in pi[:self.channels_to_process]:
-                        if int(ip[-1]) == 0:
-                            pset += (0,)
-                        else:
-                            pset += (255,)
-
-                    if self.imode == 'RGBA':
-                        pset += (int(pi[-1], 2),)
-                    new_image_pixels.append(pset)
-                img.putdata(new_image_pixels)
+                img.putdata(self.iter_rgba_pixels())
                 success = True
         except:
             success = False
