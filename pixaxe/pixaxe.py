@@ -1,4 +1,9 @@
-import hashlib, magic, os, re, struct, subprocess
+import hashlib
+import magic
+import os
+import re
+import struct
+import subprocess
 from pixaxe.steg import ImageInfo, NotSupported
 
 from assemblyline_v4_service.common.base import ServiceBase
@@ -127,7 +132,7 @@ class Pixaxe(ServiceBase):
             jtype = data[20:24]
             if jtype in ftyps:
                 file_type = ftyps[jtype]
-                print(file_type)
+                self.log.debug(file_type)
             else:
                 return
             while True:
@@ -303,7 +308,7 @@ class Pixaxe(ServiceBase):
             else:
                 decloak = False
             try:
-                imginfo = ImageInfo(infile, request, result, self.working_directory)
+                imginfo = ImageInfo(infile, request, result, self.working_directory, self.log)
             except NotSupported:
                 decloak = False
 
