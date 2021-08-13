@@ -89,7 +89,7 @@ class ImageInfo(object):
         except Exception:
             raise NotSupported()
 
-        self.binary_pixels = [self.convert_binary_string(self.imode, self.channels_to_process, self.ipixels)]
+        self.binary_pixels = list(self.convert_binary_string(self.imode, self.channels_to_process, self.ipixels))
         self.pixel_count = (self.isize[0] * self.isize[1] * self.channels_to_process)
 
         # Chunk size equals (#bytes*8) bits/num byte-values per pixel. Therefore if 8 bits per pixel, and you want to
@@ -289,6 +289,7 @@ class ImageInfo(object):
                         y_points.append(0)
                     else:
                         y_points.append(round(chisquare(np.array(obs_pixel_set), f_exp=np.array(exp_pixel_set))[1], 4))
+                    pixels = pixels[self.chunk:]
 
             else:
                 # If not greyscale, test each colour channel separately per chunk and then average
@@ -579,6 +580,7 @@ class ImageInfo(object):
                 rd = abs((e - o) / (e + o))
 
                 results['rd'] = rd
+                results = {0: results}
 
             # Other images
             else:
