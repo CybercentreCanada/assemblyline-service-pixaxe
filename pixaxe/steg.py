@@ -89,7 +89,8 @@ class ImageInfo(object):
         except Exception:
             raise NotSupported()
 
-        self.binary_pixels = list(self.convert_binary_string(self.imode, self.channels_to_process, self.ipixels))
+        # Values only get loaded into memory when used for deep_scan (ie. on decloak())
+        self.binary_pixels = None
         self.pixel_count = (self.isize[0] * self.isize[1] * self.channels_to_process)
 
         # Chunk size equals (#bytes*8) bits/num byte-values per pixel. Therefore if 8 bits per pixel, and you want to
@@ -708,6 +709,7 @@ class ImageInfo(object):
         return
 
     def decloak(self):
+        self.binary_pixels = list(self.convert_binary_string(self.imode, self.channels_to_process, self.ipixels))
         supported = {
             1: {self.LSB_visual: ['CMYK', 'P', 'RGB', 'RGBA', ]},
             2: {self.LSB_chisquare: ['CMYK', 'P', 'RGB', 'RGBA', ]},
