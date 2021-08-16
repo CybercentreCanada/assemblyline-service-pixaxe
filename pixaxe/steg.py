@@ -89,7 +89,7 @@ class ImageInfo(object):
         except Exception:
             raise NotSupported()
 
-        # Values only get loaded into memory when used for deep_scan (ie. on declock())
+        # Values only get loaded into memory when used for deep_scan (ie. on decloak())
         self.binary_pixels = None
         self.pixel_count = (self.isize[0] * self.isize[1] * self.channels_to_process)
 
