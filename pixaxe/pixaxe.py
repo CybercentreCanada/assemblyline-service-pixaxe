@@ -9,7 +9,7 @@ from pixaxe.steg import ImageInfo, NotSupported
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT
 from assemblyline.common.str_utils import safe_str
-from assemblyline_v4_service.common.utils import TimeoutException, set_death_signal
+from assemblyline_v4_service.common.utils import set_death_signal
 from functools import reduce
 
 
@@ -242,7 +242,7 @@ class Pixaxe(ServiceBase):
             if stderr:
                 if len(stderr) == 0:
                     stderr = None
-        except TimeoutException as e:
+        except subprocess.TimeoutExpired as e:
             self.log.debug("Timeout exception for file {}, with process {}:".format(self.sha, name) + str(e))
             stdout = None
             stderr = None
