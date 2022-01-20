@@ -106,7 +106,7 @@ class Pixaxe(ServiceBase):
             if not verify_bmp:
                 return data
             return bmp_data
-        except:
+        except Exception:
             return data
 
     def jpg2_dump(self, data):
@@ -154,7 +154,7 @@ class Pixaxe(ServiceBase):
                     jp2_data = data[0:end]
                     break
             return jp2_data
-        except:
+        except Exception:
             return
 
     def find_additional_content(self, alfile):
@@ -271,8 +271,8 @@ class Pixaxe(ServiceBase):
         with open(output, 'r') as f:
             lines = f.readlines()
 
-        for l in lines:
-            safe_l = safe_str(l)
+        for line in lines:
+            safe_l = safe_str(line)
             # Test number of unique characters
             uniq_char = ''.join(set(safe_l))
             if len(uniq_char) > 5:

@@ -57,11 +57,10 @@ class ImageInfo(object):
             raise NotSupported()
 
         if self.imode.upper() not in supported_modes:
+            self.log.warning("{} image mode not currently supported for steg analysis module".format(self.imode))
             if not self.result:
-                self.log.warning("{} image mode not currently supported for steganlaysis modules".format(self.imode))
                 exit()
             else:
-                self.log.warning("not a supported mode: {}".format(self.result))
                 raise NotSupported()
         else:
             self.channels_to_process = supported_modes[self.imode]
@@ -227,7 +226,7 @@ class ImageInfo(object):
             else:
                 img.putdata(self.iter_rgba_pixels())
                 success = True
-        except:
+        except Exception:
             success = False
 
         if success:
@@ -346,7 +345,7 @@ class ImageInfo(object):
                     index += 1
                     pixels = pixels[self.chunk:]
                     success = True
-        except:
+        except Exception:
             success = False
 
         if success:
@@ -366,9 +365,7 @@ class ImageInfo(object):
 
                 chires = ResultSection('LSB Chi Square Analysis.\t')
 
-                chires.add_subsection(ResultSection('Colour Map.'
-                                                    '0==Not random, '
-                                                    '100==Random'.format(self.chunk_bytes),
+                chires.add_subsection(ResultSection('Colour Map. 0==Not random, 100==Random',
                                                     body_format=BODY_FORMAT.GRAPH_DATA,
                                                     body=json.dumps(chi_graph_data)))
 
@@ -428,7 +425,7 @@ class ImageInfo(object):
 
                     pixels = pixels[self.chunk:]
                     success = True
-        except:
+        except Exception:
             success = False
 
         if success:
@@ -442,9 +439,7 @@ class ImageInfo(object):
 
             lsbres = ResultSection('LSB Average Value Analysis.\t')
 
-            lsbres.add_subsection(ResultSection('Overall'
-                                                'Closer to 0.5==Random, '
-                                                'Closer to 0/100==Not Random.'.format(self.chunk_bytes),
+            lsbres.add_subsection(ResultSection('Closer to 0.5==Random, Closer to 0/100==Not Random.',
                                                 body_format=BODY_FORMAT.GRAPH_DATA,
                                                 body=json.dumps(lsb_graph_data)))
 
@@ -674,7 +669,7 @@ class ImageInfo(object):
                 results = colour_results
 
             success = True
-        except:
+        except Exception:
             success = False
 
         if success:
@@ -699,7 +694,6 @@ class ImageInfo(object):
                           "\nCombined length results: {}% of image possibly embedded with a hidden message." \
                 .format(avg_rdfinal, avg_lenfinal)
             if self.result is not None:
-                score = int(round(avg_lenfinal + (avg_rdfinal * 10), 0))
                 self.working_result.add_subsection(ResultSection(title_text='LSB Couples Analysis',
                                                                  body_format=BODY_FORMAT.MEMORY_DUMP,
                                                                  body=final_body))
