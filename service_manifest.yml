@@ -17,21 +17,23 @@ is_external: false
 licence_count: 0
 
 config:
-  command_timeout: 60
-  run_steg_auto: true
-
-submission_params:
-  - default: false
-    name: run_steg
-    type: bool
-    value: false
+  max_pixel_count: 10000000
 
 heuristics:
+  - heur_id: 1
+    name: OCR Detection found
+    description: Suspicious verbage found in OCR inspection.
+    score: 100
+    signature_score_map:
+      macros: 100
+      ransomware: 100
+    filetype: "*"
+
   - heur_id: 2
-    name: Appended image data
-    score: 10
-    filetype: image/
-    description: Appended data extracted from image
+    name: Steg Detection found
+    description: Hidden data found embedded in image.
+    score: 100
+    filetype: "*"
 
 docker_config:
   image: ${REGISTRY}cccs/assemblyline-service-pixaxe:$SERVICE_TAG
