@@ -2,7 +2,7 @@ name: Pixaxe
 version: $SERVICE_TAG
 description: >-
   Image examination
-accepts: image/.*|audiovisual/.*
+accepts: image/.*
 rejects: empty|metadata/.*
 
 stage: CORE

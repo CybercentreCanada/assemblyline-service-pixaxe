@@ -2,8 +2,8 @@
 import hashlib
 import json
 import magic
-import re
 import os
+import re
 import struct
 import subprocess
 
@@ -13,7 +13,8 @@ from .steg import ImageInfo
 
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.result import BODY_FORMAT, Result, ResultImageSection, ResultSection, Heuristic
+from assemblyline_v4_service.common.result import Heuristic, Result, \
+    ResultImageSection, ResultJSONSection, ResultMemoryDumpSection, ResultTextSection
 from assemblyline_v4_service.common.extractor.ocr import ocr_detections
 
 
@@ -182,12 +183,11 @@ class Pixaxe(ServiceBase):
         detections = ocr_detections(request.file_path)
         if detections:
             self.log.info('OCR detections found.')
-            result.add_section(ResultSection(
+            result.add_section(ResultJSONSection(
                 f'OCR Analysis on {request.file_name}', body=json.dumps(detections),
-                body_format=BODY_FORMAT.JSON,
                 heuristic=Heuristic(1, signatures={k: len(v) for k, v in detections.items()})))
 
-        steg_section = ResultSection("Steganographical Analysis")
+        steg_section = ResultTextSection("Steganographical Analysis")
         # Attempt to extract files from the image
         extract_path = NamedTemporaryFile(delete=False)
         p = subprocess.run(
@@ -216,8 +216,7 @@ class Pixaxe(ServiceBase):
             # Find attached data
             additional_content = self.find_additional_content(request.file_path)
             if additional_content:
-                ares = ResultSection("Possible Appended Content Found",
-                                     body_format=BODY_FORMAT.MEMORY_DUMP)
+                ares = ResultMemoryDumpSection("Possible Appended Content Found")
                 ares.add_line("{} Bytes of content found at end of image file".format(len(additional_content)))
                 ares.add_line("Text preview (up to 500 bytes):\n")
                 ares.add_line("{}".format(safe_str(additional_content)[0:500]))
