@@ -65,18 +65,6 @@ class ImageInfo(object):
         else:
             self.channels_to_process = supported_modes[self.imode]
 
-        if result:
-            pil_result = ResultSection("Pillow Image Data:", body_format=BODY_FORMAT.MEMORY_DUMP)
-            if self.iformat:
-                pil_result.add_line("Format:\t {}".format(self.iformat))
-            if self.imode:
-                pil_result.add_line("Mode:\t {}".format(self.imode))
-                pil_result.add_tag('file.img.mode', self.imode)
-            if self.isize:
-                pil_result.add_line("Size:\t {}x{}".format(self.isize[0], self.isize[1]))
-                pil_result.add_tag('file.img.size', "{}x{}".format(self.isize[0], self.isize[1]))
-            self.result.add_section(pil_result)
-
         try:
             self.ipixels = iter(img.getdata())
         except Exception:
@@ -715,6 +703,6 @@ class ImageInfo(object):
                 if self.imode in l:
                     mod()
         if len(self.working_result.subsections) > 0:
-            self.result.add_section(self.working_result)
+            self.result.add_subsection(self.working_result)
 
         return

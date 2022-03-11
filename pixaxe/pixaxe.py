@@ -1,16 +1,20 @@
 import hashlib
+import json
 import magic
 import os
 import re
 import struct
 import subprocess
-from pixaxe.steg import ImageInfo, NotSupported
 
-from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT
+from stegano import lsb
+from tempfile import NamedTemporaryFile
+from .steg import ImageInfo
+
 from assemblyline.common.str_utils import safe_str
-from assemblyline_v4_service.common.utils import set_death_signal
-from functools import reduce
+from assemblyline_v4_service.common.base import ServiceBase
+from assemblyline_v4_service.common.result import Heuristic, Result, \
+    ResultImageSection, ResultJSONSection, ResultMemoryDumpSection, ResultTextSection
+from assemblyline_v4_service.common.extractor.ocr import ocr_detections
 
 
 class Pixaxe(ServiceBase):
@@ -22,41 +26,12 @@ class Pixaxe(ServiceBase):
         'jpeg2000': ['\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A', None, 'jp2_dump'],
         'png': ['\x89\x50\x4E\x47', '\x49\x45\x4E\x44.{4}', None],
     }
-    XMP_TAGGED_VALUES = {
-        'DOCUMENT ID': 'XMP_DOCUMENT_ID',
-        'DERIVED FROM DOCUMENT ID': 'XMP_DERIVED_DOCUMENT_ID',
-        'INSTANCE ID': 'XMP_INSTANCE_ID',
-        'XMP TOOLKIT': 'XMP_TOOLKIT',
-        'CREATOR TOOL': 'XMP_CREATOR_TOOL'
-    }
 
     def __init__(self, config=None):
         super(Pixaxe, self).__init__(config)
-        self.sha = None
 
     def start(self):
         self.log.debug("Pixaxe service started")
-
-    @staticmethod
-    def getfromdict(data, mapList):
-        try:
-            match = reduce(lambda d, k: d[k], mapList, data)
-        except KeyError:
-            match = None
-        return match
-
-    def setindict(self, data, mapList, value):
-        """Sets value in a nested dictionary using getfromdict method.
-
-        Args:
-            data: Dictionary to input data.
-            mapList: List of dictionary keys to iterate through.
-            value: Value of final key to place in dictionary.
-
-        Returns:
-            Dictionary with new value, or None if KeyError.
-        """
-        self.getfromdict(data, mapList[:-1])[mapList[-1]] = value
 
     @staticmethod
     def mimetype(f, t):
@@ -194,169 +169,53 @@ class Pixaxe(ServiceBase):
                     return leftovers
         return
 
-    def tesseract_call(self, infile, outfile):
-        """Runs command-line tool Tesseract. Arguments:
-
-        Args:
-            infile: File path.
-            outfile: File path of output data.
-
-        Returns:
-            Standard output and error output of command.
-        """
-        cmd = ['tesseract', infile, outfile]
-        # Process the command and save the csv result in the result object
-        return self.process(command=cmd, name="tesseract")
-
-    def convert_img(self, infile, outfile):
-        """Runs command-line tool convert. Arguments:
-        # -resize 200% Enlarge image by 200%
-
-        Args:
-            infile: File path.
-            outfile: File path of output data.
-
-        Returns:
-            Standard output and error output of command.
-        """
-        cmd = ['convert', '-resize', '200%', infile, outfile]
-        return self.process(command=cmd, name="convert")
-
-    def process(self, command, name):
-        """Runs command-line tool argument using the subprocess module.
-
-        Args:
-            command: List of command-line arguments.
-            name: Name of application being run (for logger output).
-
-        Returns:
-            Standard output and error output of command.
-        """
-        try:
-            process = subprocess.run(command,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     preexec_fn=set_death_signal(),
-                                     timeout=self.config['command_timeout'])
-            stdout, stderr = process.stdout, process.stderr
-            if stderr:
-                if len(stderr) == 0:
-                    stderr = None
-        except subprocess.TimeoutExpired as e:
-            self.log.debug("Timeout exception for file {}, with process {}:".format(self.sha, name) + str(e))
-            stdout = None
-            stderr = None
-        except Exception as e:
-            self.log.warning("{} failed to run on sample {}. Reason: ".format(name, self.sha) + str(e))
-            stdout = None
-            stderr = None
-        return stdout, stderr
-
-    def assess_output(self, output, req):
-        """Filters and writes output produced by OCR engine Tesseract.
-
-        Args:
-            output: Path to CSV file containing Tesseract output.
-            req: AL request object (to submit extracted file).
-
-        Returns:
-            Filtered output string, or NULL string if no usable output found.
-        """
-        ocr_strings = ""
-        output = "{}.txt".format(output)
-        if os.path.getsize(output) == 0:
-            return False
-        filtered_lines = set()
-        filtered_output = os.path.join(self.working_directory, "filtered_output.txt")
-        with open(output, 'r') as f:
-            lines = f.readlines()
-
-        for line in lines:
-            safe_l = safe_str(line)
-            # Test number of unique characters
-            uniq_char = ''.join(set(safe_l))
-            if len(uniq_char) > 5:
-                filtered_lines.add(safe_l + "\n")
-
-        if len(filtered_lines) == 0:
-            return None
-
-        with open(filtered_output, 'w') as f:
-            f.writelines(filtered_lines)
-
-        for fl in filtered_lines:
-            ocr_strings += fl
-
-        req.add_extracted(filtered_output, "Filtered strings extracted via OCR", "output.txt")
-        return ocr_strings
-
     def execute(self, request):
         """Main Module. See README for details."""
-        global imginfo
         result = Result()
-        request.result = result
-        self.sha = request.sha256
-        infile = request.file_path
-        run_steg = request.get_param('run_steg')
 
-        # Run image-specific modules
-        supported_images = re.compile('image/(bmp|gif|jpeg|jpg|png)')
-        if re.match(supported_images, request.file_type):
-            # Extract img info using Pillow (already available in steg.py) and determine if steg modules should be run
-            if self.config['run_steg_auto'] or run_steg:
-                decloak = True
-            else:
-                decloak = False
-            try:
-                imginfo = ImageInfo(infile, request, result, self.working_directory, self.log)
-            except NotSupported:
-                decloak = False
+        # Always provide a preview of the image being analyzed
+        image_preview = ResultImageSection(request, "Image Preview")
+        image_preview.add_image(request.file_path, name=request.file_name, description='Input file')
+        result.add_section(image_preview)
 
-            # Run Tesseract on sample
-            # Process the command and save the csv result in the result object
-            usable_out = None
-            orig_outfile = os.path.join(self.working_directory, 'outfile')
-            stdout, stderr = self.tesseract_call(infile, orig_outfile)
+        # Look for suspicious OCR
+        detections = ocr_detections(request.file_path)
+        if detections:
+            self.log.info('OCR detections found.')
+            result.add_section(ResultJSONSection(
+                f'OCR Analysis on {request.file_name}', body=json.dumps(detections),
+                heuristic=Heuristic(1, signatures={k: len(v) for k, v in detections.items()})))
 
-            if stdout or stderr:
-                # Assess Tesseract warnings
-                if b"pix too small" in stderr:
-                    # Make the image larger with convert command
-                    c_outfile = os.path.join(self.working_directory, 'enlrg_img')
-                    c_stdout, c_stderr = self.convert_img(infile, c_outfile)
-                    if c_stdout:
-                        c_outfile = os.path.join(self.working_directory, 'c_outfile')
-                        enlrg_infile = os.path.join(self.working_directory, 'enlrg')
-                        if not c_stderr:
-                            stdout, stderr = self.tesseract_call(enlrg_infile, c_outfile)
-                            if stdout:
-                                if not stderr:
-                                    outfile = c_outfile
-                                else:
-                                    outfile = orig_outfile
-                            else:
-                                outfile = orig_outfile
-                        else:
-                            outfile = orig_outfile
-                    else:
-                        outfile = orig_outfile
-                else:
-                    outfile = orig_outfile
-                    self.log.debug("Tesseract errored/warned on sample {}. Error:{}".format(self.sha, stderr))
+        steg_section = ResultTextSection("Steganographical Analysis")
+        # Attempt to extract files from the image
+        extract_path = NamedTemporaryFile(delete=False)
+        p = subprocess.run(
+            ['stegseek', '-a', '-f', request.file_path, '/opt/al_service/rockyou.txt', extract_path.name],
+            capture_output=True).stderr
+        secret_msg = lsb.reveal(request.file_path) if not request.file_type.endswith(
+            'jpg') or request.deep_scan else None
+        if b'Extracting to' in p:
+            self.log.info('Embedded file extracted from image.')
+            lines = p.splitlines()
+            orig_name = lines[1][20:-2].decode()        # Original filename: "Hello.txt".
 
-                usable_out = self.assess_output(outfile, request)
+            body = f"File was extracted from image: \n{p.decode()}"
+            steg_section.set_body(body)
+            request.add_extracted(extract_path.name, orig_name, 'File extracted from image')
+            steg_section.set_heuristic(2)
 
-            if usable_out:
-                ores = ResultSection("OCR Engine detected strings in image",
-                                     body_format=BODY_FORMAT.MEMORY_DUMP)
-                ores.add_line("Text preview (up to 500 bytes):\n")
-                ores.add_line("{}".format(usable_out[0:500]))
-                result.add_section(ores)
+        # Think it's unlikely to have both a hidden message and an embedded file
+        elif secret_msg:
+            self.log.info('Secret message found.')
+            steg_section.set_body(f'Secret message found:\n{secret_msg}')
+            steg_section.set_heuristic(2)
+
+        # Default to original behaviour
+        else:
             # Find attached data
-            additional_content = self.find_additional_content(infile)
+            additional_content = self.find_additional_content(request.file_path)
             if additional_content:
-                ares = (ResultSection("Possible Appended Content Found",
-                                      body_format=BODY_FORMAT.MEMORY_DUMP))
+                ares = ResultMemoryDumpSection("Possible Appended Content Found")
                 ares.add_line("{} Bytes of content found at end of image file".format(len(additional_content)))
                 ares.add_line("Text preview (up to 500 bytes):\n")
                 ares.add_line("{}".format(safe_str(additional_content)[0:500]))
@@ -367,7 +226,13 @@ class Pixaxe(ServiceBase):
                 request.add_extracted(file_path, file_name, "Carved content found at end of image.")
                 with open(file_path, 'wb') as unibu_file:
                     unibu_file.write(additional_content)
-            # Steganography modules
-            if decloak:
-                if request.deep_scan:
-                    imginfo.decloak()
+
+        # Steganography modules
+        img_info = ImageInfo(request.file_path, request, steg_section, self.working_directory, self.log)
+        self.log.info(f'Pixel Count: {img_info.pixel_count}')
+        if img_info.pixel_count < self.config.get('max_pixel_count', 10000000) or request.deep_scan:
+            img_info.decloak()
+
+        if steg_section.body or steg_section.subsections:
+            result.add_section(steg_section)
+        request.result = result
