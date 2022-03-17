@@ -8,6 +8,7 @@ import subprocess
 from stegano import lsb
 from tempfile import NamedTemporaryFile
 from .steg import ImageInfo
+from wand.image import Image
 
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
@@ -170,9 +171,18 @@ class Pixaxe(ServiceBase):
         """Main Module. See README for details."""
         result = Result()
 
+        displayable_image_path = request.file_path
+        pillow_incompatible = False
+        if request.file_type.endswith('wmf'):
+            # PIL is able to identify WMF but not able to render, therefore we need to convert
+            displayable_image_path = os.path.join(self.working_directory, f"{request.file_name}.png")
+            Image(filename=request.file_path).save(filename=displayable_image_path)
+            pillow_incompatible = True
+
         # Always provide a preview of the image being analyzed
         image_preview = ResultImageSection(request, "Image Preview")
-        image_preview.add_image(request.file_path, name=request.file_name, description='Input file', ocr_heuristic_id=1)
+        image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
+                                ocr_heuristic_id=1)
         result.add_section(image_preview)
 
         steg_section = ResultTextSection("Steganographical Analysis")
@@ -181,8 +191,7 @@ class Pixaxe(ServiceBase):
         p = subprocess.run(
             ['stegseek', '-a', '-f', request.file_path, '/opt/al_service/rockyou.txt', extract_path.name],
             capture_output=True).stderr
-        secret_msg = lsb.reveal(request.file_path) if not request.file_type.endswith(
-            'jpg') or request.deep_scan else None
+
         if b'Extracting to' in p:
             self.log.info('Embedded file extracted from image.')
             lines = p.splitlines()
@@ -193,8 +202,15 @@ class Pixaxe(ServiceBase):
             request.add_extracted(extract_path.name, orig_name, 'File extracted from image')
             steg_section.set_heuristic(2)
 
+        if pillow_incompatible:
+            # We can't proceed with further analysis because the original file is incompatible with Pillow
+            request.result = result
+            return
+
+        secret_msg = lsb.reveal(request.file_path) \
+            if not request.file_type.endswith('jpg') or request.deep_scan else None
         # Think it's unlikely to have both a hidden message and an embedded file
-        elif secret_msg:
+        if secret_msg:
             self.log.info('Secret message found.')
             steg_section.set_body(f'Secret message found:\n{secret_msg}')
             steg_section.set_heuristic(2)
