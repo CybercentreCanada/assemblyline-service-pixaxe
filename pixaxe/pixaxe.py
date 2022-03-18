@@ -10,6 +10,7 @@ from stegano import lsb
 from tempfile import NamedTemporaryFile
 from .steg import ImageInfo
 from wand.image import Image
+from PIL import Image as PILImage
 
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
@@ -182,18 +183,24 @@ class Pixaxe(ServiceBase):
             Image(filename=request.file_path).save(filename=displayable_image_path)
             pillow_incompatible = True
 
-        # Always provide a preview of the image being analyzed
-        image_preview = ResultImageSection(request, "Image Preview")
-        image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file')
-        result.add_section(image_preview)
+        try:
+            # Always provide a preview of the image being analyzed
+            image_preview = ResultImageSection(request, "Image Preview")
+            image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file')
+            result.add_section(image_preview)
 
-        # Look for suspicious OCR
-        detections = ocr_detections(displayable_image_path)
-        if detections:
-            self.log.info('OCR detections found.')
-            result.add_section(ResultJSONSection(
-                f'OCR Analysis on {request.file_name}', body=json.dumps(detections),
-                heuristic=Heuristic(1, signatures={k: len(v) for k, v in detections.items()})))
+            # Look for suspicious OCR
+            detections = ocr_detections(displayable_image_path)
+            if detections:
+                self.log.info('OCR detections found.')
+                result.add_section(ResultJSONSection(
+                    f'OCR Analysis on {request.file_name}', body=json.dumps(detections),
+                    heuristic=Heuristic(1, signatures={k: len(v) for k, v in detections.items()})))
+        except PILImage.DecompressionBombError:
+            pillow_incompatible = True
+            pass
+        except OSError:
+            pillow_incompatible = True
 
         steg_section = ResultTextSection("Steganographical Analysis")
         # Attempt to extract files from the image
@@ -217,8 +224,12 @@ class Pixaxe(ServiceBase):
             request.result = result
             return
 
-        secret_msg = lsb.reveal(request.file_path) \
-            if not request.file_type.endswith('jpg') or request.deep_scan else None
+        secret_msg = None
+        if "RGB" not in PILImage.open(request.file_path).mode:
+            # Library expects an image containing RGB channels
+            secret_msg = None
+        elif not request.file_type.endswith('jpg') or request.deep_scan:
+            secret_msg = lsb.reveal(request.file_path)
         # Think it's unlikely to have both a hidden message and an embedded file
         if secret_msg:
             self.log.info('Secret message found.')
