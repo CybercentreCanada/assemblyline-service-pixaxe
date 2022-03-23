@@ -3,7 +3,7 @@ version: $SERVICE_TAG
 description: >-
   Image examination
 accepts: image/.*
-rejects: empty|metadata/.*
+rejects: empty|metadata/.*|image/unknown
 
 stage: CORE
 category: Static Analysis
