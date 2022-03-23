@@ -1,5 +1,4 @@
 import hashlib
-import json
 import magic
 import os
 import re
@@ -12,9 +11,7 @@ from .steg import ImageInfo
 
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.result import Heuristic, Result, \
-    ResultImageSection, ResultJSONSection, ResultMemoryDumpSection, ResultTextSection
-from assemblyline_v4_service.common.extractor.ocr import ocr_detections
+from assemblyline_v4_service.common.result import Result, ResultImageSection, ResultMemoryDumpSection, ResultTextSection
 
 
 class Pixaxe(ServiceBase):
@@ -175,16 +172,8 @@ class Pixaxe(ServiceBase):
 
         # Always provide a preview of the image being analyzed
         image_preview = ResultImageSection(request, "Image Preview")
-        image_preview.add_image(request.file_path, name=request.file_name, description='Input file')
+        image_preview.add_image(request.file_path, name=request.file_name, description='Input file', ocr_heuristic_id=1)
         result.add_section(image_preview)
-
-        # Look for suspicious OCR
-        detections = ocr_detections(request.file_path)
-        if detections:
-            self.log.info('OCR detections found.')
-            result.add_section(ResultJSONSection(
-                f'OCR Analysis on {request.file_name}', body=json.dumps(detections),
-                heuristic=Heuristic(1, signatures={k: len(v) for k, v in detections.items()})))
 
         steg_section = ResultTextSection("Steganographical Analysis")
         # Attempt to extract files from the image
