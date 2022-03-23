@@ -7,7 +7,7 @@ USER root
 
 # Get required apt packages
 # Image/Science libraries for Python & Tesseract OCR engine/ Language plug-ins
-RUN apt-get update && apt-get install -y wget libjpeg-dev zlib1g-dev imagemagick tesseract-ocr tesseract-ocr-all
+RUN apt-get update && apt-get install -y wget libjpeg-dev zlib1g-dev imagemagick tesseract-ocr
 RUN pip install Pillow numpy scipy matplotlib pytesseract stegano
 
 RUN mkdir -p /opt/al_support
