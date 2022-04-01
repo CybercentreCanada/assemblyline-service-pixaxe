@@ -7,7 +7,7 @@ import subprocess
 
 from stegano import lsb
 from tempfile import NamedTemporaryFile
-from .steg import ImageInfo
+from .steg import ImageInfo, NotSupported
 from wand.image import Image
 from PIL import Image as PILImage
 
@@ -244,11 +244,14 @@ class Pixaxe(ServiceBase):
                     unibu_file.write(additional_content)
 
         # Steganography modules
-        img_info = ImageInfo(request.file_path, request, steg_section, self.working_directory, self.log)
-        self.log.info(f'Pixel Count: {img_info.pixel_count}')
-        if img_info.pixel_count < self.config.get('max_pixel_count', 10000000) or request.deep_scan:
-            img_info.decloak()
+        try:
+            img_info = ImageInfo(request.file_path, request, steg_section, self.working_directory, self.log)
+            self.log.info(f'Pixel Count: {img_info.pixel_count}')
+            if img_info.pixel_count < self.config.get('max_pixel_count', 10000000) or request.deep_scan:
+                img_info.decloak()
 
-        if steg_section.body or steg_section.subsections:
-            result.add_section(steg_section)
+            if steg_section.body or steg_section.subsections:
+                result.add_section(steg_section)
+        except NotSupported:
+            pass
         request.result = result
