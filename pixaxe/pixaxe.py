@@ -206,7 +206,8 @@ class Pixaxe(ServiceBase):
 
             body = f"File was extracted from image: \n{p.decode()}"
             steg_section.set_body(body)
-            request.add_extracted(extract_path.name, orig_name, 'File extracted from image')
+            request.add_extracted(extract_path.name, orig_name, 'File extracted from image',
+                                  safelist_interface=self.api_interface)
             steg_section.set_heuristic(2)
 
         if pillow_incompatible:
@@ -239,7 +240,8 @@ class Pixaxe(ServiceBase):
                 result.add_section(ares)
                 file_name = "{}_appended_img_content".format(hashlib.sha256(additional_content).hexdigest()[0:10])
                 file_path = os.path.join(self.working_directory, file_name)
-                request.add_extracted(file_path, file_name, "Carved content found at end of image.")
+                request.add_extracted(file_path, file_name, "Carved content found at end of image.",
+                                      safelist_interface=self.api_interface)
                 with open(file_path, 'wb') as unibu_file:
                     unibu_file.write(additional_content)
 
