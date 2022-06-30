@@ -183,8 +183,9 @@ class Pixaxe(ServiceBase):
         try:
             # Always provide a preview of the image being analyzed
             image_preview = ResultImageSection(request, "Image Preview")
+            ocr_heuristic_id = 1 if not request.file_type == "image/bmp" else None
             image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
-                                    ocr_heuristic_id=1)
+                                    ocr_heuristic_id=ocr_heuristic_id)
             result.add_section(image_preview)
         except PILImage.DecompressionBombError:
             pillow_incompatible = True
