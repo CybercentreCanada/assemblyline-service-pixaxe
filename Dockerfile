@@ -11,9 +11,10 @@ RUN apt-get update && apt-get install -y wget libjpeg-dev zlib1g-dev imagemagick
 
 # Install Tesseract from source
 RUN apt-get install -y g++ autoconf automake libtool pkg-config libpng-dev libtiff5-dev zlib1g-dev libleptonica-dev libpango1.0-dev build-essential
-RUN wget git clone https://github.com/tesseract-ocr/tesseract.git
+RUN git clone https://github.com/tesseract-ocr/tesseract.git
 WORKDIR tesseract
 RUN ./autogen.sh && ./configure --disable-dependency-tracking && make && make install && ldconfig
+RUN wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
 
 RUN pip install Pillow numpy scipy matplotlib pytesseract stegano wand
 
