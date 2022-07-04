@@ -176,15 +176,21 @@ class Pixaxe(ServiceBase):
         pillow_incompatible = False
         if request.file_type.endswith('wmf'):
             # PIL is able to identify WMF but not able to render, therefore we need to convert
-            displayable_image_path = os.path.join(self.working_directory, f"{request.file_name}.png")
-            Image(filename=request.file_path).save(filename=displayable_image_path)
-            pillow_incompatible = True
+            try:
+                displayable_image_path = os.path.join(self.working_directory, f"{request.file_name}.png")
+                Image(filename=request.file_path).save(filename=displayable_image_path)
+                pillow_incompatible = True
+            except:
+                # If we can't convert the image for any reason then we can't perform any rendering/OCR
+                request.result = Result()
+                return
 
         try:
             # Always provide a preview of the image being analyzed
             image_preview = ResultImageSection(request, "Image Preview")
+            ocr_heuristic_id = 1 if not request.file_type == "image/bmp" else None
             image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
-                                    ocr_heuristic_id=1)
+                                    ocr_heuristic_id=ocr_heuristic_id)
             result.add_section(image_preview)
         except PILImage.DecompressionBombError:
             pillow_incompatible = True
