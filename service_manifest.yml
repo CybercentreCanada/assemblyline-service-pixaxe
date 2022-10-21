@@ -38,4 +38,4 @@ heuristics:
 docker_config:
   image: ${REGISTRY}cccs/assemblyline-service-pixaxe:$SERVICE_TAG
   cpu_cores: 1.0
-  ram_mb: 512
+  ram_mb: 2048
