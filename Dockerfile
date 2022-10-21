@@ -2,6 +2,7 @@ ARG branch=latest
 FROM cccs/assemblyline-v4-service-base:$branch
 
 ENV SERVICE_PATH pixaxe.pixaxe.Pixaxe
+ENV TESSERACT_VERSION 5.2.0
 
 USER root
 
@@ -11,8 +12,9 @@ RUN apt-get update && apt-get install -y wget libjpeg-dev zlib1g-dev imagemagick
 
 # Install Tesseract from source
 RUN apt-get install -y g++ autoconf automake libtool pkg-config libpng-dev libtiff5-dev zlib1g-dev libleptonica-dev libpango1.0-dev build-essential
-RUN git clone https://github.com/tesseract-ocr/tesseract.git
-WORKDIR tesseract
+RUN wget https://github.com/tesseract-ocr/tesseract/archive/refs/tags/${TESSERACT_VERSION}.tar.gz
+RUN tar -xvf ${TESSERACT_VERSION}.tar.gz
+WORKDIR tesseract-${TESSERACT_VERSION}
 RUN ./autogen.sh && ./configure --disable-dependency-tracking && make && make install && ldconfig
 RUN wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
 
