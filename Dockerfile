@@ -8,7 +8,7 @@ USER root
 
 # Get required apt packages
 # Image/Science libraries for Python & Tesseract OCR engine/ Language plug-ins
-RUN apt-get update && apt-get install -y wget libjpeg-dev zlib1g-dev imagemagick libmagickwand-dev
+RUN apt-get update && apt-get install -y wget libjpeg-dev zlib1g-dev imagemagick libmagickwand-dev libgl1
 
 # Install Tesseract from source
 RUN apt-get install -y g++ autoconf automake libtool pkg-config libpng-dev libtiff5-dev zlib1g-dev libleptonica-dev libpango1.0-dev build-essential
