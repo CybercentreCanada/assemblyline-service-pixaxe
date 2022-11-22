@@ -226,7 +226,11 @@ class Pixaxe(ServiceBase):
             # Library expects an image containing RGB channels
             secret_msg = None
         elif not request.file_type.endswith('jpg') or request.deep_scan:
-            secret_msg = lsb.reveal(request.file_path)
+            try:
+                secret_msg = lsb.reveal(request.file_path)
+            except IndexError:
+                # Unable to determine a secret message
+                pass
         # Think it's unlikely to have both a hidden message and an embedded file
         if secret_msg:
             self.log.info('Secret message found.')
