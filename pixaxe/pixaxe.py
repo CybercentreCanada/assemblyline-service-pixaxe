@@ -10,6 +10,7 @@ from tempfile import NamedTemporaryFile
 from .steg import ImageInfo, NotSupported
 from wand.image import Image
 from PIL import Image as PILImage
+from pyzbar.pyzbar import decode as qr_decode
 
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
@@ -197,6 +198,14 @@ class Pixaxe(ServiceBase):
             pass
         except OSError:
             pillow_incompatible = True
+
+        # Attempt QR code decoding
+        for i, decoded_qr in enumerate(qr_decode(PILImage.open(request.file_path))):
+            fh = NamedTemporaryFile(delete=False, mode="wb")
+            fh.write(decoded_qr.data)
+            fh.close()
+
+            request.add_extracted(fh.name, name=f"embedded_qr_{i}", description="Decoded QR code content")
 
         steg_section = ResultTextSection("Steganographical Analysis")
         # Attempt to extract files from the image
