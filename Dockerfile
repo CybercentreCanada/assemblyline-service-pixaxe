@@ -20,6 +20,9 @@ RUN wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.train
 
 RUN pip install Pillow numpy scipy matplotlib pytesseract stegano wand
 
+# Used for decoding QR codes
+RUN apt-get install -y libzbar0 && pip install pyzbar
+
 RUN mkdir -p /opt/al_support
 
 # Install Steganalysis library
