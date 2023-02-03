@@ -18,7 +18,7 @@ WORKDIR tesseract-${TESSERACT_VERSION}
 RUN ./autogen.sh && ./configure --disable-dependency-tracking && make && make install && ldconfig
 RUN wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
 
-RUN pip install Pillow numpy scipy matplotlib pytesseract stegano wand
+RUN pip install Pillow numpy scipy matplotlib pytesseract stegano wand cairosvg
 
 # Used for decoding QR codes
 RUN apt-get install -y libzbar0 && pip install pyzbar
