@@ -5,16 +5,19 @@ import re
 import struct
 import subprocess
 
+from cairosvg import svg2png
 from stegano import lsb
 from tempfile import NamedTemporaryFile
 from .steg import ImageInfo, NotSupported
 from wand.image import Image
-from PIL import Image as PILImage
+from PIL import Image as PILImage, ImageFile
 from pyzbar.pyzbar import decode as qr_decode
 
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import Result, ResultImageSection, ResultMemoryDumpSection, ResultTextSection
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class Pixaxe(ServiceBase):
@@ -175,11 +178,16 @@ class Pixaxe(ServiceBase):
 
         displayable_image_path = request.file_path
         pillow_incompatible = False
-        if request.file_type.endswith('wmf'):
-            # PIL is able to identify WMF but not able to render, therefore we need to convert
+        if request.file_type.split('/')[-1] in ['svg', 'wmf', 'emf']:
             try:
                 displayable_image_path = os.path.join(self.working_directory, f"{request.file_name}.png")
-                Image(filename=request.file_path).save(filename=displayable_image_path)
+                if any([request.file_type.endswith(wmf_type) for wmf_type in ['wmf', 'emf']]):
+                    # PIL is able to identify WMF but not able to render, therefore we need to convert
+                    Image(filename=request.file_path).save(filename=displayable_image_path)
+                elif request.file_type.endswith('svg'):
+                    # PIL doesn't support SVG so we will need to convert
+                    svg2png(bytestring=request.file_contents, write_to=displayable_image_path)
+
                 pillow_incompatible = True
             except:
                 # If we can't convert the image for any reason then we can't perform any rendering/OCR
@@ -200,7 +208,7 @@ class Pixaxe(ServiceBase):
             pillow_incompatible = True
 
         # Attempt QR code decoding
-        for i, decoded_qr in enumerate(qr_decode(PILImage.open(request.file_path))):
+        for i, decoded_qr in enumerate(qr_decode(PILImage.open(displayable_image_path))):
             fh = NamedTemporaryFile(delete=False, mode="wb")
             fh.write(decoded_qr.data)
             fh.close()
