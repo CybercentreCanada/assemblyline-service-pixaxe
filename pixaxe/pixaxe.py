@@ -202,6 +202,7 @@ class Pixaxe(ServiceBase):
                 # Render all frames in the GIF and append to results
                 gif_image = PILImage.open(request.file_path)
                 for i in range(gif_image.n_frames):
+                    gif_image.seek(i)
                     fh = NamedTemporaryFile(delete=False, suffix='.png')
                     gif_image.save(fh.name)
                     fh.flush()
