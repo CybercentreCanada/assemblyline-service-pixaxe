@@ -10,7 +10,7 @@ from stegano import lsb
 from tempfile import NamedTemporaryFile
 from .steg import ImageInfo, NotSupported
 from wand.image import Image
-from PIL import Image as PILImage, ImageFile
+from PIL import Image as PILImage, ImageFile, UnidentifiedImageError
 from pyzbar.pyzbar import decode as qr_decode
 
 from assemblyline.common.str_utils import safe_str
@@ -201,19 +201,17 @@ class Pixaxe(ServiceBase):
             image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
                                     ocr_heuristic_id=ocr_heuristic_id)
             result.add_section(image_preview)
-        except PILImage.DecompressionBombError:
-            pillow_incompatible = True
-            pass
-        except OSError:
-            pillow_incompatible = True
 
-        # Attempt QR code decoding
-        for i, decoded_qr in enumerate(qr_decode(PILImage.open(displayable_image_path))):
-            fh = NamedTemporaryFile(delete=False, mode="wb")
-            fh.write(decoded_qr.data)
-            fh.close()
+            # Attempt QR code decoding
+            for i, decoded_qr in enumerate(qr_decode(PILImage.open(displayable_image_path))):
+                fh = NamedTemporaryFile(delete=False, mode="wb")
+                fh.write(decoded_qr.data)
+                fh.close()
 
-            request.add_extracted(fh.name, name=f"embedded_qr_{i}", description="Decoded QR code content")
+                request.add_extracted(fh.name, name=f"embedded_qr_{i}", description="Decoded QR code content")
+        except (PILImage.DecompressionBombError, OSError, UnidentifiedImageError):
+            if displayable_image_path == request.file_path:
+                pillow_incompatible = True
 
         steg_section = ResultTextSection("Steganographical Analysis")
         # Attempt to extract files from the image
