@@ -198,8 +198,19 @@ class Pixaxe(ServiceBase):
             # Always provide a preview of the image being analyzed
             image_preview = ResultImageSection(request, "Image Preview")
             ocr_heuristic_id = 1 if not request.file_type == "image/bmp" else None
-            image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
-                                    ocr_heuristic_id=ocr_heuristic_id)
+            if request.file_type == "image/gif":
+                # Render all frames in the GIF and append to results
+                gif_image = PILImage.open(request.file_path)
+                for i in range(gif_image.n_frames):
+                    fh = NamedTemporaryFile(delete=False, suffix='.png')
+                    gif_image.save(fh.name)
+                    fh.flush()
+                    image_preview.add_image(fh.name, name=f"{request.file_name}_frame_{i}", description='GIF frame',
+                                            ocr_heuristic_id=ocr_heuristic_id)
+
+            else:
+                image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
+                                        ocr_heuristic_id=ocr_heuristic_id)
             result.add_section(image_preview)
 
             # Attempt QR code decoding
