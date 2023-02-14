@@ -146,7 +146,7 @@ class Pixaxe(ServiceBase):
         """
         with open(alfile, 'rb') as f:
             data = f.read()
-        for ftype, tinfo in iter(self.PAT_FILEMARKERS.items()):
+        for _, tinfo in iter(self.PAT_FILEMARKERS.items()):
 
             # Build up the regex
             if tinfo[1] is not None:
@@ -178,6 +178,23 @@ class Pixaxe(ServiceBase):
 
         displayable_image_path = request.file_path
         pillow_incompatible = False
+        save_ocr_output = request.get_param('save_ocr_output').lower()
+
+        def _handle_ocr_output(ocr_io, fn_prefix):
+            # Write OCR output as specified by submissions params
+            if save_ocr_output == 'no':
+                return
+            else:
+                # Write content to disk to be uploaded
+                if save_ocr_output == 'as_extracted':
+                    request.add_extracted(ocr_io.name, f'{fn_prefix}_ocr_output',
+                                          description="OCR Output")
+                elif save_ocr_output == 'as_supplementary':
+                    request.add_supplementary(ocr_io.name, f'{fn_prefix}_ocr_output',
+                                              description="OCR Output")
+                else:
+                    self.log.warning(f'Unknown save method for OCR given: {save_ocr_output}')
+
         if request.file_type.split('/')[-1] in ['svg', 'wmf', 'emf']:
             try:
                 displayable_image_path = os.path.join(self.working_directory, f"{request.file_name}.png")
@@ -202,16 +219,20 @@ class Pixaxe(ServiceBase):
                 # Render all frames in the GIF and append to results
                 gif_image = PILImage.open(request.file_path)
                 for i in range(gif_image.n_frames):
+                    ocr_io = NamedTemporaryFile('w', delete=False)
                     gif_image.seek(i)
                     fh = NamedTemporaryFile(delete=False, suffix='.png')
                     gif_image.save(fh.name)
                     fh.flush()
                     image_preview.add_image(fh.name, name=f"{request.file_name}_frame_{i}", description='GIF frame',
-                                            ocr_heuristic_id=ocr_heuristic_id)
+                                            ocr_heuristic_id=ocr_heuristic_id, ocr_output=ocr_io)
+                    _handle_ocr_output(ocr_io, fn_prefix=f"{request.file_name}_frame_{i}")
 
             else:
+                ocr_io = NamedTemporaryFile('w', delete=False)
                 image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
-                                        ocr_heuristic_id=ocr_heuristic_id)
+                                        ocr_heuristic_id=ocr_heuristic_id, ocr_io=ocr_io)
+                _handle_ocr_output(ocr_io, fn_prefix=request.file_name)
             result.add_section(image_preview)
 
             # Attempt QR code decoding
@@ -221,6 +242,8 @@ class Pixaxe(ServiceBase):
                 fh.close()
 
                 request.add_extracted(fh.name, name=f"embedded_qr_{i}", description="Decoded QR code content")
+        except ValueError:
+            pass
         except (PILImage.DecompressionBombError, OSError, UnidentifiedImageError):
             if displayable_image_path == request.file_path:
                 pillow_incompatible = True
@@ -285,7 +308,7 @@ class Pixaxe(ServiceBase):
         # Steganography modules
         try:
             img_info = ImageInfo(request.file_path, request, steg_section, self.working_directory, self.log)
-            self.log.info(f'Pixel Count: {img_info.pixel_count}')
+            self.log.debug(f'Pixel Count: {img_info.pixel_count}')
             if img_info.pixel_count < self.config.get('max_pixel_count', 10000000) or request.deep_scan:
                 img_info.decloak()
 
