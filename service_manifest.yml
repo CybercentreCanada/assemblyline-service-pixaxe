@@ -16,8 +16,21 @@ enabled: true
 is_external: false
 licence_count: 0
 
+submission_params:
+  - name: save_ocr_output
+    type: list
+    value: "no"
+    default: "no"
+    list: ['no', 'as_extracted', 'as_supplementary']
+
 config:
   max_pixel_count: 10000000
+  # List of OCR terms to override defaults in service base for detection
+  # See: https://github.com/CybercentreCanada/assemblyline-v4-service/blob/master/assemblyline_v4_service/common/extractor/ocr.py
+  ocr:
+    banned: [] # Banned terms
+    macros: [] # Terms that indicate macros
+    ransomware: [] # Terms that indicate ransomware
 
 heuristics:
   - heur_id: 1
@@ -27,6 +40,7 @@ heuristics:
     signature_score_map:
       macros: 100
       ransomware: 100
+      banned: 1
     filetype: "*"
 
   - heur_id: 2
