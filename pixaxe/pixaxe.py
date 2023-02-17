@@ -225,7 +225,7 @@ class Pixaxe(ServiceBase):
                     gif_image.save(fh.name)
                     fh.flush()
                     image_preview.add_image(fh.name, name=f"{request.file_name}_frame_{i}", description='GIF frame',
-                                            ocr_heuristic_id=ocr_heuristic_id, ocr_output=ocr_io)
+                                            ocr_heuristic_id=ocr_heuristic_id, ocr_io=ocr_io)
                     _handle_ocr_output(ocr_io, fn_prefix=f"{request.file_name}_frame_{i}")
 
             else:
