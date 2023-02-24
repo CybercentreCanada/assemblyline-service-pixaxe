@@ -38,9 +38,9 @@ heuristics:
     description: Suspicious verbage found in OCR inspection.
     score: 100
     signature_score_map:
-      macros: 100
-      ransomware: 100
-      banned: 1
+      macros_strings: 100
+      ransomware_strings: 100
+      banned_strings: 1
     filetype: "*"
 
   - heur_id: 2
