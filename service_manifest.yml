@@ -9,7 +9,7 @@ stage: CORE
 category: Static Analysis
 
 file_required: true
-timeout: 300
+timeout: 60
 disable_cache: false
 
 enabled: true
@@ -21,10 +21,10 @@ submission_params:
     type: list
     value: "no"
     default: "no"
-    list: ['no', 'as_extracted', 'as_supplementary']
+    list: ["no", "as_extracted", "as_supplementary"]
 
 config:
-  max_pixel_count: 10000000
+  max_pixel_count: 100000
   # List of OCR terms to override defaults in service base for detection
   # See: https://github.com/CybercentreCanada/assemblyline-v4-service/blob/master/assemblyline_v4_service/common/extractor/ocr.py
   ocr:

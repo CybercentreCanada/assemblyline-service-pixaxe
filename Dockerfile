@@ -2,7 +2,7 @@ ARG branch=latest
 FROM cccs/assemblyline-v4-service-base:$branch
 
 ENV SERVICE_PATH pixaxe.pixaxe.Pixaxe
-ENV TESSERACT_VERSION 5.2.0
+ENV TESSERACT_VERSION 5.3.0
 
 USER root
 
