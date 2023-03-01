@@ -309,7 +309,7 @@ class Pixaxe(ServiceBase):
         try:
             img_info = ImageInfo(request.file_path, request, steg_section, self.working_directory, self.log)
             self.log.debug(f'Pixel Count: {img_info.pixel_count}')
-            if img_info.pixel_count < self.config.get('max_pixel_count', 10000000) or request.deep_scan:
+            if img_info.pixel_count < self.config.get('max_pixel_count', 100000) or request.deep_scan:
                 img_info.decloak()
 
             if steg_section.body or steg_section.subsections:
