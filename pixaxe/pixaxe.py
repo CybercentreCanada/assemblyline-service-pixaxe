@@ -172,6 +172,78 @@ class Pixaxe(ServiceBase):
                     return leftovers
         return
 
+    def _analyseGifImage(self, path):
+        '''
+        Pre-process pass over the image to determine the mode (full or additive).
+        Necessary as assessing single frames isn't reliable. Need to know the mode
+        before processing all frames.
+        '''
+        im = PILImage.open(path)
+        results = {
+            'size': im.size,
+            'mode': 'full',
+        }
+        try:
+            while True:
+                if im.tile:
+                    tile = im.tile[0]
+                    update_region = tile[1]
+                    update_region_dimensions = update_region[2:]
+                    if update_region_dimensions != im.size:
+                        results['mode'] = 'partial'
+                        break
+                im.seek(im.tell() + 1)
+        except EOFError:
+            pass
+        return results
+
+    def _writeGifFrames(self, request, image_preview, ocr_heuristic_id, _handle_ocr_output):
+        '''
+        Iterate the GIF, extracting each frame.
+        '''
+        mode = self._analyseGifImage(request.file_path)['mode']
+
+        im = PILImage.open(request.file_path)
+
+        i = 0
+        p = im.getpalette()
+        last_frame = im.convert('RGBA')
+
+        try:
+            while True:
+                '''
+                If the GIF uses local colour tables, each frame will have its own palette.
+                If not, we need to apply the global palette to the new frame.
+                '''
+                if not im.getpalette() and im.mode in ("L", "LA", "P", "PA"):
+                    im.putpalette(p)
+
+                new_frame = PILImage.new('RGBA', im.size)
+
+                '''
+                Is this file a "partial"-mode GIF where frames update a region of a different size to the entire image?
+                If so, we need to construct the new frame by pasting it on top of the preceding frames.
+                '''
+                if mode == 'partial':
+                    new_frame.paste(last_frame)
+
+                new_frame.paste(im, (0, 0), im.convert('RGBA'))
+                fh = NamedTemporaryFile(delete=False, suffix='.png')
+                new_frame.save(fh.name, 'PNG')
+                fh.flush()
+
+                ocr_io = NamedTemporaryFile('w', delete=False)
+
+                image_preview.add_image(fh.name, name=f"{request.file_name}_frame_{i}", description='GIF frame',
+                                        ocr_heuristic_id=ocr_heuristic_id, ocr_io=ocr_io)
+                _handle_ocr_output(ocr_io, fn_prefix=f"{request.file_name}_frame_{i}")
+
+                i += 1
+                last_frame = new_frame
+                im.seek(im.tell() + 1)
+        except EOFError:
+            pass
+
     def execute(self, request):
         """Main Module. See README for details."""
         result = Result()
@@ -206,7 +278,7 @@ class Pixaxe(ServiceBase):
                     svg2png(bytestring=request.file_contents, write_to=displayable_image_path)
 
                 pillow_incompatible = True
-            except:
+            except Exception:
                 # If we can't convert the image for any reason then we can't perform any rendering/OCR
                 request.result = Result()
                 return
@@ -217,16 +289,7 @@ class Pixaxe(ServiceBase):
             ocr_heuristic_id = 1 if not request.file_type == "image/bmp" else None
             if request.file_type == "image/gif":
                 # Render all frames in the GIF and append to results
-                gif_image = PILImage.open(request.file_path)
-                for i in range(gif_image.n_frames):
-                    ocr_io = NamedTemporaryFile('w', delete=False)
-                    gif_image.seek(i)
-                    fh = NamedTemporaryFile(delete=False, suffix='.png')
-                    gif_image.save(fh.name)
-                    fh.flush()
-                    image_preview.add_image(fh.name, name=f"{request.file_name}_frame_{i}", description='GIF frame',
-                                            ocr_heuristic_id=ocr_heuristic_id, ocr_io=ocr_io)
-                    _handle_ocr_output(ocr_io, fn_prefix=f"{request.file_name}_frame_{i}")
+                self._writeGifFrames(request, image_preview, ocr_heuristic_id, _handle_ocr_output)
 
             else:
                 ocr_io = NamedTemporaryFile('w', delete=False)
@@ -309,7 +372,9 @@ class Pixaxe(ServiceBase):
         try:
             img_info = ImageInfo(request.file_path, request, steg_section, self.working_directory, self.log)
             self.log.debug(f'Pixel Count: {img_info.pixel_count}')
-            if img_info.pixel_count < self.config.get('max_pixel_count', 100000) or request.deep_scan:
+            if img_info.pixel_count > 100 and \
+                    img_info.pixel_count < self.config.get('max_pixel_count', 100000) or \
+                    request.deep_scan:
                 img_info.decloak()
 
             if steg_section.body or steg_section.subsections:
