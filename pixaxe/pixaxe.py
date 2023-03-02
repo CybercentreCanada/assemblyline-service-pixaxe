@@ -15,7 +15,8 @@ from pyzbar.pyzbar import decode as qr_decode
 
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.result import Result, ResultImageSection, ResultMemoryDumpSection, ResultTextSection
+from assemblyline_v4_service.common.result import Result, ResultImageSection, ResultMemoryDumpSection, \
+    ResultKeyValueSection
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -215,7 +216,7 @@ class Pixaxe(ServiceBase):
                 If the GIF uses local colour tables, each frame will have its own palette.
                 If not, we need to apply the global palette to the new frame.
                 '''
-                if not im.getpalette() and im.mode in ("L", "LA", "P", "PA"):
+                if p is not None and not im.getpalette() and im.mode in ("L", "LA", "P", "PA"):
                     im.putpalette(p)
 
                 new_frame = PILImage.new('RGBA', im.size)
@@ -311,7 +312,7 @@ class Pixaxe(ServiceBase):
             if displayable_image_path == request.file_path:
                 pillow_incompatible = True
 
-        steg_section = ResultTextSection("Steganographical Analysis")
+        steg_section = ResultMemoryDumpSection("Steganographical Analysis")
         # Attempt to extract files from the image
         extract_path = NamedTemporaryFile(delete=False)
         p = subprocess.run(
@@ -320,14 +321,22 @@ class Pixaxe(ServiceBase):
 
         if b'Extracting to' in p:
             self.log.info('Embedded file extracted from image.')
-            lines = p.splitlines()
-            orig_name = lines[1][20:-2].decode()        # Original filename: "Hello.txt".
+            extracted_section = ResultKeyValueSection("Secret file was extracted from image", parent=steg_section)
+            lines = [x for x in p.decode().splitlines() if "e: " in x]
+            orig_name = "steg_extract.txt"
+            passphrase = None
+            for line in lines:
+                if 'filename: "' in line:
+                    orig_name = line.split('filename: "')[1][:-2]         # Original filename: "Hello.txt".
+                if 'passphrase: "' in line:
+                    passphrase = line.split('passphrase: "')[1].strip('"')  # Found passphrase: "pass"
 
-            body = f"File was extracted from image: \n{p.decode()}"
-            steg_section.set_body(body)
+            extracted_section.set_item("original_name", orig_name)
+            if passphrase is not None:
+                extracted_section.set_item("passphrase", passphrase)
             request.add_extracted(extract_path.name, orig_name, 'File extracted from image',
                                   safelist_interface=self.api_interface)
-            steg_section.set_heuristic(2)
+            extracted_section.set_heuristic(2)
 
         if pillow_incompatible:
             # We can't proceed with further analysis because the original file is incompatible with Pillow
