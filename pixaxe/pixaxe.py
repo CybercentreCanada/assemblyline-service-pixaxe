@@ -1,22 +1,27 @@
 import hashlib
-import magic
 import os
 import re
 import struct
 import subprocess
-
-from cairosvg import svg2png
-from stegano import lsb
 from tempfile import NamedTemporaryFile
-from .steg import ImageInfo, NotSupported
-from wand.image import Image
-from PIL import Image as PILImage, ImageFile, UnidentifiedImageError
-from pyzbar.pyzbar import decode as qr_decode
 
+import magic
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.result import Result, ResultImageSection, ResultMemoryDumpSection, \
-    ResultKeyValueSection
+from assemblyline_v4_service.common.result import (
+    Result,
+    ResultImageSection,
+    ResultKeyValueSection,
+    ResultMemoryDumpSection,
+)
+from cairosvg import svg2png
+from PIL import Image as PILImage
+from PIL import ImageFile, UnidentifiedImageError
+from pyzbar.pyzbar import decode as qr_decode
+from stegano import lsb
+from wand.image import Image
+
+from .steg import ImageInfo, NotSupported
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 

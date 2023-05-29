@@ -1,15 +1,15 @@
 """
 Requires numpy, Pillow(PIL), python-matplotlib, scipy
 """
-from assemblyline_v4_service.common.result import ResultSection, BODY_FORMAT
-
-from PIL import Image
 import json
 import math
-import numpy as np
 from os import path
-from scipy.stats import chisquare
+
 import matplotlib.pyplot as plt
+import numpy as np
+from assemblyline_v4_service.common.result import BODY_FORMAT, ResultSection
+from PIL import Image
+from scipy.stats import chisquare
 
 
 class NotSupported(Exception):
