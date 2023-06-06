@@ -32,7 +32,7 @@ and are not considered ready for production environments*
 
 Current AL modules:
 
-Least signifcant bit (LSB) analysis:
+Least significant bit (LSB) analysis:
 
 - Visual attack
 
