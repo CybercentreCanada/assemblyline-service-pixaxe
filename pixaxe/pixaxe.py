@@ -6,6 +6,7 @@ import subprocess
 from tempfile import NamedTemporaryFile
 
 import magic
+from assemblyline.odm.base import FULL_URI
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import (
@@ -306,11 +307,16 @@ class Pixaxe(ServiceBase):
 
             # Attempt QR code decoding
             for i, decoded_qr in enumerate(qr_decode(PILImage.open(displayable_image_path))):
-                fh = NamedTemporaryFile(delete=False, mode="wb")
-                fh.write(decoded_qr.data)
-                fh.close()
+                if re.match(FULL_URI, decoded_qr.data.decode()):
+                    # Tag URI
+                    image_preview.add_tag('network.static.uri', decoded_qr.data)
+                else:
+                    # Write data to file
+                    fh = NamedTemporaryFile(delete=False, mode="wb")
+                    fh.write(decoded_qr.data)
+                    fh.close()
 
-                request.add_extracted(fh.name, name=f"embedded_qr_{i}", description="Decoded QR code content")
+                    request.add_extracted(fh.name, name=f"embedded_qr_{i}", description="Decoded QR code content")
         except ValueError:
             pass
         except (PILImage.DecompressionBombError, OSError, UnidentifiedImageError):
