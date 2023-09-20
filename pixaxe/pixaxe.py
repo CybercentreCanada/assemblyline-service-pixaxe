@@ -303,6 +303,7 @@ class Pixaxe(ServiceBase):
                 image_preview.add_image(displayable_image_path, name=request.file_name, description='Input file',
                                         ocr_heuristic_id=ocr_heuristic_id, ocr_io=ocr_io)
                 _handle_ocr_output(ocr_io, fn_prefix=request.file_name)
+            image_preview.promote_as_screenshot()
             result.add_section(image_preview)
 
             # Attempt QR code decoding
