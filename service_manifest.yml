@@ -49,6 +49,12 @@ heuristics:
     score: 100
     filetype: "*"
 
+  - heur_id: 3
+    name: QR Code Detected
+    description: A QR code was found in the submitted file
+    score: 0
+    filetype: "*"
+
 docker_config:
   image: ${REGISTRY}cccs/assemblyline-service-pixaxe:$SERVICE_TAG
   cpu_cores: 1.0

@@ -4,16 +4,19 @@ import re
 import struct
 import subprocess
 from tempfile import NamedTemporaryFile
+from typing import Optional
 
 import magic
 from assemblyline.common.str_utils import safe_str
 from assemblyline.odm.base import FULL_URI
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import (
+    Heuristic,
     Result,
     ResultImageSection,
     ResultKeyValueSection,
     ResultMemoryDumpSection,
+    ResultSection,
 )
 from cairosvg import svg2png
 from PIL import Image as PILImage
@@ -320,7 +323,11 @@ class Pixaxe(ServiceBase):
             result.add_section(image_preview)
 
             # Attempt QR code decoding
+            qr_detected_section: Optional[ResultSection] = None
             for i, decoded_qr in enumerate(qr_decode(PILImage.open(displayable_image_path))):
+                if not qr_detected_section:
+                    qr_heur = Heuristic(3)
+                    qr_detected_section = ResultSection(qr_heur.name, heuristic=qr_heur, parent=result)
                 if re.match(FULL_URI, decoded_qr.data.decode()):
                     # Tag URI
                     image_preview.add_tag("network.static.uri", decoded_qr.data)
