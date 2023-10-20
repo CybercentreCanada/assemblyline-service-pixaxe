@@ -329,9 +329,11 @@ class Pixaxe(ServiceBase):
                     qr_heur = Heuristic(3)
                     qr_detected_section = ResultSection(qr_heur.name, heuristic=qr_heur, parent=result)
                 if re.match(FULL_URI, decoded_qr.data.decode()):
+                    qr_heur.add_signature_id("uri_decoded_from_qr_code")
                     # Tag URI
                     image_preview.add_tag("network.static.uri", decoded_qr.data)
                 else:
+                    qr_heur.add_signature_id("file_decoded_from_qr_code")
                     # Write data to file
                     fh = NamedTemporaryFile(delete=False, mode="wb")
                     fh.write(decoded_qr.data)
