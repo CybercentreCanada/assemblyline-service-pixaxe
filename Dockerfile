@@ -18,9 +18,15 @@ WORKDIR tesseract-${TESSERACT_VERSION}
 RUN ./autogen.sh && ./configure --disable-dependency-tracking && make && make install && ldconfig
 RUN wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
 
+# Switch to assemblyline user
+USER assemblyline
+
 # Install python dependencies
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir --user --requirement requirements.txt && rm -rf ~/.cache/pip
+
+# Switch to root user
+USER root
 
 RUN mkdir -p /opt/al_support
 
