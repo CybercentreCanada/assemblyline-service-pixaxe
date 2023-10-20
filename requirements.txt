@@ -1,0 +1,9 @@
+Pillow
+numpy
+scipy
+matplotlib
+pytesseract
+stegano
+wand
+cairosvg
+pyzbar

@@ -1,0 +1,23 @@
+# Image/Science libraries for Python & Tesseract OCR engine/ Language plug-ins
+wget
+libjpeg-dev
+zlib1g-dev
+imagemagick
+libmagickwand-dev
+libgl1
+
+# Tesseract
+g++
+autoconf
+automake
+libtool
+pkg-config
+libpng-dev
+libtiff5-dev
+zlib1g-dev
+libleptonica-dev
+libpango1.0-dev
+build-essential
+
+# Used for decoding QR codes
+libzbar0
