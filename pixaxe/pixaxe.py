@@ -21,7 +21,6 @@ from assemblyline_v4_service.common.result import (
 from cairosvg import svg2png
 from PIL import Image as PILImage
 from PIL import ImageFile, UnidentifiedImageError
-from pyzbar.pyzbar import decode as qr_decode
 from stegano import lsb
 from wand.image import Image
 
@@ -324,22 +323,28 @@ class Pixaxe(ServiceBase):
 
             # Attempt QR code decoding
             qr_detected_section: Optional[ResultSection] = None
-            for i, decoded_qr in enumerate(qr_decode(PILImage.open(displayable_image_path))):
-                if not qr_detected_section:
-                    qr_heur = Heuristic(3)
-                    qr_detected_section = ResultSection(qr_heur.name, heuristic=qr_heur, parent=result)
-                if re.match(FULL_URI, decoded_qr.data.decode()):
-                    qr_heur.add_signature_id("uri_decoded_from_qr_code")
-                    # Tag URI
-                    image_preview.add_tag("network.static.uri", decoded_qr.data)
-                else:
-                    qr_heur.add_signature_id("file_decoded_from_qr_code")
-                    # Write data to file
-                    fh = NamedTemporaryFile(delete=False, mode="wb")
-                    fh.write(decoded_qr.data)
-                    fh.close()
+            qr_results = subprocess.run(["zbarimg", "-q", displayable_image_path], capture_output=True).stdout.decode()
 
-                    request.add_extracted(fh.name, name=f"embedded_qr_{i}", description="Decoded QR code content")
+            if qr_results:
+                for i, qr_result in enumerate(qr_results.split("\n")):
+                    code_type, code_value = qr_result.split(":", 1)
+                    if not qr_detected_section:
+                        qr_heur = Heuristic(3)
+                        qr_detected_section = ResultSection(qr_heur.name, heuristic=qr_heur, parent=result)
+                    if re.match(FULL_URI, code_value):
+                        qr_heur.add_signature_id("uri_decoded_from_qr_code")
+                        # Tag URI
+                        image_preview.add_tag("network.static.uri", code_value)
+                    else:
+                        qr_heur.add_signature_id("file_decoded_from_qr_code")
+                        # Write data to file
+                        fh = NamedTemporaryFile(delete=False, mode="wb")
+                        fh.write(code_value)
+                        fh.close()
+
+                        request.add_extracted(
+                            fh.name, name=f"embedded_code_{i}", description=f"Decoded {code_type} content"
+                        )
         except ValueError:
             pass
         except (PILImage.DecompressionBombError, OSError, UnidentifiedImageError):

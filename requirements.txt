@@ -6,4 +6,3 @@ pytesseract
 stegano
 wand
 cairosvg
-pyzbar

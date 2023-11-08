@@ -20,4 +20,4 @@ libpango1.0-dev
 build-essential
 
 # Used for decoding QR codes
-libzbar0
+zbar-tools
