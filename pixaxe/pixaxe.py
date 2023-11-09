@@ -3,6 +3,7 @@ import os
 import re
 import struct
 import subprocess
+from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import Optional
 
@@ -385,7 +386,7 @@ class Pixaxe(ServiceBase):
             return
 
         secret_msg = None
-        if "RGB" not in PILImage.open(request.file_path).mode:
+        if "RGB" not in PILImage.open(BytesIO(request.file_contents)).mode:
             # Library expects an image containing RGB channels
             secret_msg = None
         elif not request.file_type.endswith("jpg") or request.deep_scan:
