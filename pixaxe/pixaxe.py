@@ -324,19 +324,16 @@ class Pixaxe(ServiceBase):
 
             # Attempt QR code decoding
             qr_detected_section: Optional[ResultSection] = None
-            qr_results = subprocess.run(["zbarimg", "-q", displayable_image_path], capture_output=True).stdout.decode()
+            qr_results = subprocess.run(["zbarimg", "-q", displayable_image_path], capture_output=True).stdout
 
             if qr_results:
-                for i, qr_result in enumerate(qr_results.split("\n")):
-                    code_type, code_value = qr_result.split(":", 1)
+                for i, qr_result in enumerate(qr_results.split(b"\n")):
+                    code_type, code_value = qr_result.split(b":", 1)
                     if not qr_detected_section:
                         qr_heur = Heuristic(3)
                         qr_detected_section = ResultSection(qr_heur.name, heuristic=qr_heur, parent=result)
-                    if re.match(FULL_URI, code_value):
-                        qr_heur.add_signature_id("uri_decoded_from_qr_code")
-                        # Tag URI
-                        image_preview.add_tag("network.static.uri", code_value)
-                    else:
+
+                    def attach_qr_file():
                         qr_heur.add_signature_id("file_decoded_from_qr_code")
                         # Write data to file
                         fh = NamedTemporaryFile(delete=False, mode="wb")
@@ -344,8 +341,21 @@ class Pixaxe(ServiceBase):
                         fh.close()
 
                         request.add_extracted(
-                            fh.name, name=f"embedded_code_{i}", description=f"Decoded {code_type} content"
+                            fh.name, name=f"embedded_code_{i}", description=f"Decoded {code_type.decode()} content"
                         )
+
+                    try:
+                        decoded_value = code_value.decode()
+                        if re.match(FULL_URI, decoded_value):
+                            qr_heur.add_signature_id("uri_decoded_from_qr_code")
+                            # Tag URI
+                            image_preview.add_tag("network.static.uri", decoded_value)
+                        else:
+                            attach_qr_file()
+                    except UnicodeDecodeError:
+                        # Attach contents as a file
+                        attach_qr_file()
+
         except ValueError:
             pass
         except (PILImage.DecompressionBombError, OSError, UnidentifiedImageError):
