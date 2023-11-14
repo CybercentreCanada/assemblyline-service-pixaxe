@@ -338,7 +338,7 @@ class Pixaxe(ServiceBase):
                     else:
                         qr_heur.add_signature_id("file_decoded_from_qr_code")
                         # Write data to file
-                        fh = NamedTemporaryFile(delete=False, mode="wb")
+                        fh = NamedTemporaryFile(delete=False, mode="w")
                         fh.write(code_value)
                         fh.close()
 
