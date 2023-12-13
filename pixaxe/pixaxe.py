@@ -270,7 +270,14 @@ class Pixaxe(ServiceBase):
 
         displayable_image_path = request.file_path
         pillow_incompatible = False
-        save_ocr_output = request.get_param("save_ocr_output").lower()
+
+        save_ocr_output = request.get_param("save_ocr_output")
+
+        # Handle save_ocr_output parameter being a boolean or string
+        if isinstance(save_ocr_output, bool):
+            save_ocr_output = "as_extracted" if save_ocr_output else "no"
+        else:
+            save_ocr_output = save_ocr_output.lower()
 
         def _handle_ocr_output(ocr_io, fn_prefix):
             # Write OCR output as specified by submissions params
