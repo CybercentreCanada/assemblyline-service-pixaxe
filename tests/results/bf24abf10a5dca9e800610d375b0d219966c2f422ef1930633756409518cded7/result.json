@@ -1,0 +1,52 @@
+{
+  "extra": {
+    "drop_file": false,
+    "score": 0,
+    "sections": [
+      {
+        "auto_collapse": false,
+        "body": [
+          {
+            "img": {
+              "description": "Input file",
+              "name": "bf24abf10a5dca9e800610d375b0d219966c2f422ef1930633756409518cded7",
+              "sha256": "87814f9cb488421f4d5c612bb267bc5af8ba2203d536cd631857a6df08d4bbc9"
+            },
+            "thumb": {
+              "description": "Input file (thumbnail)",
+              "name": "bf24abf10a5dca9e800610d375b0d219966c2f422ef1930633756409518cded7.thumb",
+              "sha256": "13b45051d9095ee2715482fbaf484e0c3aec71c8f1580d9efd7dadde2726024d"
+            }
+          }
+        ],
+        "body_config": {},
+        "body_format": "IMAGE",
+        "classification": "TLP:CLEAR",
+        "depth": 0,
+        "heuristic": null,
+        "promote_to": "SCREENSHOT",
+        "tags": {},
+        "title_text": "Image Preview",
+        "zeroize_on_tag_safe": false
+      }
+    ]
+  },
+  "files": {
+    "extracted": [],
+    "supplementary": [
+      {
+        "name": "bf24abf10a5dca9e800610d375b0d219966c2f422ef1930633756409518cded7.thumb",
+        "sha256": "13b45051d9095ee2715482fbaf484e0c3aec71c8f1580d9efd7dadde2726024d"
+      },
+      {
+        "name": "bf24abf10a5dca9e800610d375b0d219966c2f422ef1930633756409518cded7",
+        "sha256": "87814f9cb488421f4d5c612bb267bc5af8ba2203d536cd631857a6df08d4bbc9"
+      }
+    ]
+  },
+  "results": {
+    "heuristics": [],
+    "tags": {},
+    "temp_submission_data": {}
+  }
+}

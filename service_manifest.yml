@@ -41,19 +41,19 @@ heuristics:
       macros_strings: 100
       ransomware_strings: 100
       banned_strings: 1
-    filetype: "*"
+    filetype: "image/.*"
 
   - heur_id: 2
     name: Steg Detection found
     description: Hidden data found embedded in image.
     score: 100
-    filetype: "*"
+    filetype: "image/.*"
 
   - heur_id: 3
     name: QR Code Detected
     description: A QR code was found in the submitted file
     score: 0
-    filetype: "*"
+    filetype: "image/.*"
 
 docker_config:
   image: ${REGISTRY}cccs/assemblyline-service-pixaxe:$SERVICE_TAG
