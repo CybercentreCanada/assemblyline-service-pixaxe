@@ -58,6 +58,20 @@ jobs:
             grep -vE '^#' "$(pwd)/pkglist.txt" | xargs sudo apt install -y
           fi
           sudo rm -rf /var/lib/apt/lists/*
+
+          # Install Tesseract from source
+          sudo wget https://github.com/tesseract-ocr/tesseract/archive/refs/tags/${TESSERACT_VERSION}.tar.gz
+          sudo tar -xvf ${TESSERACT_VERSION}.tar.gz
+          cd tesseract-${TESSERACT_VERSION}
+          sudo ./autogen.sh && ./configure --disable-dependency-tracking && make && make install && ldconfig
+          sudo wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
+
+          # Install Steganalysis library from source
+          sudo mkdir -p /opt/al_service/
+          sudo wget https://github.com/RickdeJager/stegseek/releases/download/v0.6/stegseek_0.6-1.deb
+          sudo apt-get install -y ./stegseek_0.6-1.deb && rm -f ./stegseek_0.6-1.deb  && rm -rf /var/lib/apt/lists/*
+          sudo wget https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt -O /opt/al_service/rockyou.txt
+
           sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir assemblyline assemblyline_v4_service
           [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
           [ -f $(pwd)/tests/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/tests/requirements.txt
