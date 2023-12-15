@@ -1,0 +1,87 @@
+{
+  "extra": {
+    "drop_file": false,
+    "score": 0,
+    "sections": [
+      {
+        "auto_collapse": false,
+        "body": [
+          {
+            "img": {
+              "description": "Input file",
+              "name": "f92ac68223525a47515ce885ab3f5accd37f181346dad79f8cf6b4f4690ee336",
+              "sha256": "64b52a7b6e751720e57067880360b664b3a195da613154b19bf0a3447a7b1a6a"
+            },
+            "thumb": {
+              "description": "Input file (thumbnail)",
+              "name": "f92ac68223525a47515ce885ab3f5accd37f181346dad79f8cf6b4f4690ee336.thumb",
+              "sha256": "7d1e1be650e00fb27b6af812bd569ff6e598b2f1a5744636db4b858567ae9d72"
+            }
+          }
+        ],
+        "body_config": {},
+        "body_format": "IMAGE",
+        "classification": "TLP:CLEAR",
+        "depth": 0,
+        "heuristic": null,
+        "promote_to": "SCREENSHOT",
+        "tags": {},
+        "title_text": "Image Preview",
+        "zeroize_on_tag_safe": false
+      },
+      {
+        "auto_collapse": false,
+        "body": null,
+        "body_config": {},
+        "body_format": "TEXT",
+        "classification": "TLP:CLEAR",
+        "depth": 0,
+        "heuristic": {
+          "attack_ids": [],
+          "frequency": 1,
+          "heur_id": 3,
+          "score": 0,
+          "score_map": {},
+          "signatures": {
+            "file_decoded_from_qr_code": 1
+          }
+        },
+        "promote_to": null,
+        "tags": {},
+        "title_text": "QR Code Detected",
+        "zeroize_on_tag_safe": false
+      }
+    ]
+  },
+  "files": {
+    "extracted": [
+      {
+        "name": "embedded_code_0",
+        "sha256": "64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f3c"
+      }
+    ],
+    "supplementary": [
+      {
+        "name": "f92ac68223525a47515ce885ab3f5accd37f181346dad79f8cf6b4f4690ee336",
+        "sha256": "64b52a7b6e751720e57067880360b664b3a195da613154b19bf0a3447a7b1a6a"
+      },
+      {
+        "name": "f92ac68223525a47515ce885ab3f5accd37f181346dad79f8cf6b4f4690ee336.thumb",
+        "sha256": "7d1e1be650e00fb27b6af812bd569ff6e598b2f1a5744636db4b858567ae9d72"
+      }
+    ]
+  },
+  "results": {
+    "heuristics": [
+      {
+        "attack_ids": [],
+        "heur_id": 3,
+        "signatures": [
+          "file_decoded_from_qr_code"
+        ]
+      }
+    ],
+    "tags": {},
+    "temp_submission_data": {}
+  }
+}
