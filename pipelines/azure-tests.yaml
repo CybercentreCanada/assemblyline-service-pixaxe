@@ -65,15 +65,12 @@ jobs:
           # Install Steganalysis library from source
           sudo mkdir -p /opt/al_service/
           sudo wget https://github.com/RickdeJager/stegseek/releases/download/v0.6/stegseek_0.6-1.deb
-          sudo apt-get install -y ./stegseek_0.6-1.deb && rm -f ./stegseek_0.6-1.deb  && rm -rf /var/lib/apt/lists/*
+          sudo apt-get install -y ./stegseek_0.6-1.deb && rm -f ./stegseek_0.6-1.deb
           sudo wget https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt -O /opt/al_service/rockyou.txt
-
-          sudo rm -rf /var/lib/apt/lists/*
 
           sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir assemblyline assemblyline_v4_service
           [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
           [ -f $(pwd)/tests/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/tests/requirements.txt
-          sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
         workingDirectory: $(full_self_location)
         displayName: Setup environment
       - script: |
