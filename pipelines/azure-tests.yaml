@@ -51,6 +51,7 @@ jobs:
         fetchDepth: 1
         path: $(samples_location)
       - script: |
+          set -exv  # Echo commands before they are run
           [ ! -d "$(pwd)/tests" ] && echo "No tests found" && exit
           sudo apt-get update
           sudo apt-get install -y libfuzzy-dev libfuzzy2
@@ -59,6 +60,7 @@ jobs:
           fi
 
           # Install Tesseract from source
+          export TESSERACT_VERSION=5.3.0
           sudo wget https://github.com/tesseract-ocr/tesseract/archive/refs/tags/${TESSERACT_VERSION}.tar.gz
           sudo tar -xvf ${TESSERACT_VERSION}.tar.gz
           cd tesseract-${TESSERACT_VERSION}
