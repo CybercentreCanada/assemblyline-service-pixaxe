@@ -64,7 +64,11 @@ jobs:
           sudo wget https://github.com/tesseract-ocr/tesseract/archive/refs/tags/${TESSERACT_VERSION}.tar.gz
           sudo tar -xvf ${TESSERACT_VERSION}.tar.gz
           cd tesseract-${TESSERACT_VERSION}
-          sudo ./autogen.sh && ./configure --disable-dependency-tracking && make && make install && ldconfig
+          sudo ./autogen.sh
+          sudo ./configure --disable-dependency-tracking
+          sudo make
+          sudo make install && ldconfig
+          sudo mkdir -p /usr/local/share/tessdata/
           sudo wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
 
           # Install Steganalysis library from source
