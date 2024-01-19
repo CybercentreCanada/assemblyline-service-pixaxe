@@ -59,17 +59,8 @@ jobs:
             grep -vE '^#' "$(pwd)/pkglist.txt" | xargs sudo apt install -y
           fi
 
-          # Install Tesseract from source
-          export TESSERACT_VERSION=5.3.0
-          sudo wget https://github.com/tesseract-ocr/tesseract/archive/refs/tags/${TESSERACT_VERSION}.tar.gz
-          sudo tar -xvf ${TESSERACT_VERSION}.tar.gz
-          cd tesseract-${TESSERACT_VERSION}
-          sudo ./autogen.sh
-          sudo ./configure --disable-dependency-tracking
-          sudo make
-          sudo make install && ldconfig
-          sudo mkdir -p /usr/local/share/tessdata/
-          sudo wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
+          # Install Tesseract
+          sudo apt-get install -y tesseract-ocr
 
           # Install Steganalysis library from source
           sudo mkdir -p /opt/al_service/
