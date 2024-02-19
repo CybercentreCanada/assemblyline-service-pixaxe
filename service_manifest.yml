@@ -15,6 +15,7 @@ disable_cache: false
 enabled: true
 is_external: false
 licence_count: 0
+privileged: true
 
 submission_params:
   - name: save_ocr_output
@@ -58,4 +59,4 @@ heuristics:
 docker_config:
   image: ${REGISTRY}cccs/assemblyline-service-pixaxe:$SERVICE_TAG
   cpu_cores: 1.0
-  ram_mb: 2048
+  ram_mb: 4096
