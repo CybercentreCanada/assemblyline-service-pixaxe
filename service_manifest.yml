@@ -27,7 +27,7 @@ submission_params:
 config:
   max_pixel_count: 100000
   # List of OCR terms to override defaults in service base for detection
-  # See: https://github.com/CybercentreCanada/assemblyline-v4-service/blob/master/assemblyline_v4_service/common/extractor/ocr.py
+  # See: https://github.com/CybercentreCanada/assemblyline-v4-service/blob/master/assemblyline_v4_service/common/ocr.py
   ocr:
     banned: [] # Banned terms
     macros: [] # Terms that indicate macros
