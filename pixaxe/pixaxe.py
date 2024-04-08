@@ -10,6 +10,7 @@ import magic
 from assemblyline.common.str_utils import safe_str
 from assemblyline.odm.base import FULL_URI
 from assemblyline_v4_service.common.base import ServiceBase
+from assemblyline_v4_service.common.request import ServiceRequest
 from assemblyline_v4_service.common.result import (
     Heuristic,
     Result,
@@ -263,7 +264,7 @@ class Pixaxe(ServiceBase):
         except EOFError:
             pass
 
-    def execute(self, request):
+    def execute(self, request: ServiceRequest):
         """Main Module. See README for details."""
         result = Result()
 
@@ -342,6 +343,8 @@ class Pixaxe(ServiceBase):
                         qr_heur.add_signature_id("uri_decoded_from_qr_code")
                         # Tag URI
                         image_preview.add_tag("network.static.uri", code_value)
+                        if request.get_param("extract_ocr_uri"):
+                            request.add_extracted_uri("URI from QR code", code_value)
                     else:
                         qr_heur.add_signature_id("file_decoded_from_qr_code")
                         # Write data to file
