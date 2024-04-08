@@ -23,7 +23,7 @@ submission_params:
     value: "no"
     default: "no"
     list: ["no", "as_extracted", "as_supplementary"]
-  - drop_ocr_uri:
+  - name: drop_ocr_uri
     type: bool
     value: false
     default: false
