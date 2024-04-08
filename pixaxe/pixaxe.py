@@ -343,7 +343,7 @@ class Pixaxe(ServiceBase):
                         qr_heur.add_signature_id("uri_decoded_from_qr_code")
                         # Tag URI
                         image_preview.add_tag("network.static.uri", code_value)
-                        if request.get_param("drop_ocr_uri"):
+                        if request.get_param("extract_ocr_uri"):
                             request.add_extracted_uri("URI from QR code", code_value)
                     else:
                         qr_heur.add_signature_id("file_decoded_from_qr_code")
