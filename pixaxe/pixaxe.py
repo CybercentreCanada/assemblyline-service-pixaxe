@@ -20,6 +20,7 @@ from assemblyline_v4_service.common.result import (
     ResultSection,
 )
 from cairosvg import svg2png
+from multidecoder.decoders.network import find_emails, find_urls
 from PIL import Image as PILImage
 from PIL import ImageFile, UnidentifiedImageError
 from stegano import lsb
@@ -187,6 +188,12 @@ class Pixaxe(ServiceBase):
                     return leftovers
         return
 
+    def tag_network_iocs(self, section: ResultSection, ocr_io: NamedTemporaryFile) -> None:
+        ocr_io.seek(0)
+        ocr_content = ocr_io.read()
+        [section.add_tag("network.email.address", node.value) for node in find_emails(ocr_content.encode())]
+        [section.add_tag("network.static.uri", node.value) for node in find_urls(ocr_content.encode())]
+
     def _analyseGifImage(self, path):
         """
         Pre-process pass over the image to determine the mode (full or additive).
@@ -247,7 +254,7 @@ class Pixaxe(ServiceBase):
                 new_frame.save(fh.name, "PNG")
                 fh.flush()
 
-                ocr_io = NamedTemporaryFile("w", delete=False)
+                ocr_io = NamedTemporaryFile("w+", delete=False)
 
                 image_preview.add_image(
                     fh.name,
@@ -256,6 +263,9 @@ class Pixaxe(ServiceBase):
                     ocr_heuristic_id=ocr_heuristic_id,
                     ocr_io=ocr_io,
                 )
+                # Tag any network IOCs found in OCR output
+                self.tag_network_iocs(image_preview, ocr_io)
+
                 _handle_ocr_output(ocr_io, fn_prefix=f"{request.file_name}_frame_{i}")
 
                 i += 1
@@ -317,7 +327,7 @@ class Pixaxe(ServiceBase):
                 self._writeGifFrames(request, image_preview, ocr_heuristic_id, _handle_ocr_output)
 
             else:
-                ocr_io = NamedTemporaryFile("w", delete=False)
+                ocr_io = NamedTemporaryFile("w+", delete=False)
                 image_preview.add_image(
                     displayable_image_path,
                     name=request.file_name,
@@ -325,6 +335,9 @@ class Pixaxe(ServiceBase):
                     ocr_heuristic_id=ocr_heuristic_id,
                     ocr_io=ocr_io,
                 )
+                # Tag any network IOCs found in OCR output
+                self.tag_network_iocs(image_preview, ocr_io)
+
                 _handle_ocr_output(ocr_io, fn_prefix=request.file_name)
             image_preview.promote_as_screenshot()
             result.add_section(image_preview)
