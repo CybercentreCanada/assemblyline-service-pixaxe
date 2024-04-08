@@ -23,6 +23,10 @@ submission_params:
     value: "no"
     default: "no"
     list: ["no", "as_extracted", "as_supplementary"]
+  - name: extract_ocr_uri
+    type: bool
+    value: false
+    default: false
 
 config:
   max_pixel_count: 100000
