@@ -39,7 +39,7 @@ config:
 
 heuristics:
   - heur_id: 1
-    name: OCR Detection found
+    name: OCR Detection Found
     description: Suspicious verbage found in OCR inspection.
     score: 100
     signature_score_map:
@@ -49,7 +49,7 @@ heuristics:
     filetype: "image/.*"
 
   - heur_id: 2
-    name: Steg Detection found
+    name: Steg Detection Found
     description: Hidden data found embedded in image.
     score: 100
     filetype: "image/.*"
