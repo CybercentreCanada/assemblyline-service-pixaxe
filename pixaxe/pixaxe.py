@@ -21,7 +21,7 @@ from assemblyline_v4_service.common.result import (
 )
 from cairosvg import svg2png
 from multidecoder.decoders.network import find_emails, find_urls
-from PIL import Image as PILImage
+from PIL import Image as PILImage, ImageOps
 from PIL import ImageFile, UnidentifiedImageError
 from stegano import lsb
 from wand.image import Image
@@ -345,6 +345,11 @@ class Pixaxe(ServiceBase):
             # Attempt QR code decoding
             qr_detected_section: Optional[ResultSection] = None
             qr_results = subprocess.run(["zbarimg", "-q", displayable_image_path], capture_output=True).stdout.decode()
+            if not qr_results:
+                # Try decoding with a color invert of the image
+                with NamedTemporaryFile() as tmp_qr:
+                    ImageOps.invert(PILImage.open(request.file_path).convert("RGB")).save(tmp_qr.name, format="JPEG")
+                    qr_results = subprocess.run(["zbarimg", "-q", tmp_qr.name], capture_output=True).stdout.decode()
 
             if qr_results:
                 for i, qr_result in enumerate(qr_results.split("\n")):
