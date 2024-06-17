@@ -7,3 +7,4 @@ stegano
 wand
 cairosvg
 multidecoder
+opencv-python
