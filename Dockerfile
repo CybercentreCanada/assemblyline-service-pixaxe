@@ -2,7 +2,6 @@ ARG branch=latest
 FROM cccs/assemblyline-v4-service-base:$branch
 
 ENV SERVICE_PATH pixaxe.pixaxe.Pixaxe
-ENV TESSERACT_VERSION 5.3.0
 
 # Switch to root user
 USER root
@@ -10,13 +9,6 @@ USER root
 # Install apt dependencies
 COPY pkglist.txt pkglist.txt
 RUN apt-get update && grep -vE '^#' pkglist.txt | xargs apt-get install -y && rm -rf /var/lib/apt/lists/*
-
-# Install Tesseract from source
-RUN wget https://github.com/tesseract-ocr/tesseract/archive/refs/tags/${TESSERACT_VERSION}.tar.gz
-RUN tar -xvf ${TESSERACT_VERSION}.tar.gz
-WORKDIR tesseract-${TESSERACT_VERSION}
-RUN ./autogen.sh && ./configure --disable-dependency-tracking && make && make install && ldconfig
-RUN wget https://raw.githubusercontent.com/tesseract-ocr/tessdata/main/eng.traineddata -O /usr/local/share/tessdata/eng.traineddata
 
 # Switch to assemblyline user
 USER assemblyline

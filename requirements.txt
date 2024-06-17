@@ -1,5 +1,5 @@
 Pillow
-numpy
+numpy<2
 scipy
 matplotlib
 pytesseract
@@ -7,3 +7,4 @@ stegano
 wand
 cairosvg
 multidecoder
+opencv-python

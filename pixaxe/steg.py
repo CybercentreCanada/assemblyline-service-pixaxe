@@ -1,6 +1,8 @@
 """
 Requires numpy, Pillow(PIL), python-matplotlib, scipy
 """
+
+import cv2
 import json
 import math
 from os import path
@@ -25,18 +27,19 @@ class ImageInfo(object):
         self.log = logger
 
         if result:
-            self.working_result = (ResultSection("Image Steganography Module Results:",
-                                                 body_format=BODY_FORMAT.MEMORY_DUMP))
+            self.working_result = ResultSection(
+                "Image Steganography Module Results:", body_format=BODY_FORMAT.MEMORY_DUMP
+            )
         else:
             self.result = result
 
         # Currently only supporting 8-bit pixel modes
         self.pixel_size = 8
         supported_modes = {
-            'CMYK': 4,
-            'P': 1,
-            'RGB': 3,
-            'RGBA': 4,
+            "CMYK": 4,
+            "P": 1,
+            "RGB": 3,
+            "RGBA": 4,
         }
 
         # Pillow seems to like non-corrupt images, so give its best shot and exit on error
@@ -78,7 +81,7 @@ class ImageInfo(object):
 
         # Values only get loaded into memory when used for deep_scan (ie. on decloak())
         self.binary_pixels = None
-        self.pixel_count = (self.isize[0] * self.isize[1] * self.channels_to_process)
+        self.pixel_count = self.isize[0] * self.isize[1] * self.channels_to_process
 
         # Chunk size equals (#bytes*8) bits/num byte-values per pixel. Therefore if 8 bits per pixel, and you want to
         # perform test on every 512 bytes of data, chunk size will be (512*8)/8 == every 512 pixels examined.
@@ -102,15 +105,15 @@ class ImageInfo(object):
 
         if channels == 1:
             for pi in p:
-                yield '{0:08b}'.format(pi)
+                yield "{0:08b}".format(pi)
 
         else:
             for pi in p:
                 pset = ()
                 for ip in pi[:channels]:
-                    pset += ('{0:08b}'.format(ip),)
-                if mode == 'RGBA':
-                    pset += ('{0:08b}'.format(pi[-1]),)
+                    pset += ("{0:08b}".format(ip),)
+                if mode == "RGBA":
+                    pset += ("{0:08b}".format(pi[-1]),)
                 yield pset
 
     @staticmethod
@@ -158,7 +161,7 @@ class ImageInfo(object):
                 sig_val.append(i + 1)
 
         if len(sig_val) > 0:
-            sig_res = ResultSection('Found significant change in randomness')
+            sig_res = ResultSection("Found significant change in randomness")
             # Only account for LSB, therefore 1 bit per pixel, not 8
             bits_per_group = self.chunk * self.channels_to_process
             if len(sig_val) == 1:
@@ -166,15 +169,21 @@ class ImageInfo(object):
                     total_plot_span = (len(data) - start) + 1
                     bytes_of_embed = int(round(float((total_plot_span * bits_per_group) / 8), 0))
                     total_bytes = int(round(float((start * bits_per_group) / 8), 0))
-                    sig_res.add_line("{} bytes of possible random embedded data starting around byte {} of image."
-                                     .format(bytes_of_embed, total_bytes))
+                    sig_res.add_line(
+                        "{} bytes of possible random embedded data starting around byte {} of image.".format(
+                            bytes_of_embed, total_bytes
+                        )
+                    )
             else:
                 for i, (start, end) in enumerate(zip(sig_val, sig_val[1:])):
                     total_plot_span = (end - start) + 1
                     bytes_of_embed = int(round(float((total_plot_span * bits_per_group) / 8), 0))
                     total_bytes = int(round(float((start * bits_per_group) / 8), 0))
-                    sig_res.add_line("{} bytes of possible random embedded data starting around byte {} of image."
-                                     .format(bytes_of_embed, total_bytes))
+                    sig_res.add_line(
+                        "{} bytes of possible random embedded data starting around byte {} of image.".format(
+                            bytes_of_embed, total_bytes
+                        )
+                    )
 
             return sig_res
 
@@ -190,13 +199,13 @@ class ImageInfo(object):
     def iter_rgba_pixels(self):
         for pi in self.binary_pixels:
             pset = ()
-            for ip in pi[:self.channels_to_process]:
+            for ip in pi[: self.channels_to_process]:
                 if int(ip[-1]) == 0:
                     pset += (0,)
                 else:
                     pset += (255,)
 
-            if self.imode == 'RGBA':
+            if self.imode == "RGBA":
                 pset += (int(pi[-1], 2),)
             yield pset
 
@@ -224,8 +233,8 @@ class ImageInfo(object):
             if self.request is not None:
                 self.request.add_supplementary(lsb_visual_path, "LSB_visual_attack", "Pixaxe LSB visual attack image")
                 if self.result is not None:
-                    visres = ResultSection('Visual LSB Analysis.\t')
-                    visres.add_line('Visual LSB analysis successful, see extracted files.')
+                    visres = ResultSection("Visual LSB Analysis.\t")
+                    visres.add_line("Visual LSB analysis successful, see extracted files.")
                     self.working_result.add_subsection(visres)
             else:
                 img.show()
@@ -240,9 +249,9 @@ class ImageInfo(object):
 
         # Use image if not in AL
         if self.request is None:
-            plt.switch_backend('agg')
+            plt.switch_backend("agg")
             plt.axis([0, self.pixel_count / 8, -0.1, 1.1])
-            plt.title('Chi Square Test')
+            plt.title("Chi Square Test")
             plt.grid(True)
 
         index = 0
@@ -262,8 +271,8 @@ class ImageInfo(object):
                     # Let's grab some PoVs!!! Yay!!!
                     for i in range(0, 255, 2):
                         # Get counts
-                        v1 = pixels[:self.chunk].count(str('{0:08b}').format(i))
-                        v2 = pixels[:self.chunk].count(str('{0:08b}').format(i + 1))
+                        v1 = pixels[: self.chunk].count(str("{0:08b}").format(i))
+                        v2 = pixels[: self.chunk].count(str("{0:08b}").format(i + 1))
                         # Add observed values
                         if v1 == 0 and v2 == 0:
                             continue
@@ -277,7 +286,7 @@ class ImageInfo(object):
                         y_points.append(0)
                     else:
                         y_points.append(round(chisquare(np.array(obs_pixel_set), f_exp=np.array(exp_pixel_set))[1], 4))
-                    pixels = pixels[self.chunk:]
+                    pixels = pixels[self.chunk :]
 
             else:
                 # If not greyscale, test each colour channel separately per chunk and then average
@@ -286,7 +295,7 @@ class ImageInfo(object):
                     x_points.append(x_location)
 
                     # Grab channel (i.e. R,G,B) pixels
-                    colours = self.get_colours(pixels[:self.chunk])
+                    colours = self.get_colours(pixels[: self.chunk])
                     counts = []
                     lsb_counts = []
 
@@ -296,8 +305,8 @@ class ImageInfo(object):
                         # Let's grab some PoVs!!! Yay!!!
                         for i in range(0, 255, 2):
                             # Get counts
-                            v1 = pixels_flat[:self.chunk].count(str('{0:08b}').format(i))
-                            v2 = pixels_flat[:self.chunk].count(str('{0:08b}').format(i + 1))
+                            v1 = pixels_flat[: self.chunk].count(str("{0:08b}").format(i))
+                            v2 = pixels_flat[: self.chunk].count(str("{0:08b}").format(i + 1))
                             # Add observed values
                             if v1 == 0 and v2 == 0:
                                 continue
@@ -310,13 +319,13 @@ class ImageInfo(object):
                         if len(obs_pixel_set) == 0:
                             counts.append(0)
                             if self.request is None:
-                                plt.scatter(x_location, 0, color=c, marker='^', s=50)
+                                plt.scatter(x_location, 0, color=c, marker="^", s=50)
 
                         else:
                             chi = round(chisquare(np.array(obs_pixel_set), f_exp=np.array(exp_pixel_set))[1], 6)
                             counts.append(chi)
                             if self.request is None:
-                                plt.scatter(x_location, chi, color=c, marker='^', s=50)
+                                plt.scatter(x_location, chi, color=c, marker="^", s=50)
                         # Additionally, collect the LSBs for additional randomness testing.
                         # Idea from http://guillermito2.net/stegano/tools/
                         lsb = []
@@ -324,38 +333,39 @@ class ImageInfo(object):
                             lsb.append(float(pbyte[-1]))
                         lsb_avg_value = float(round(sum(lsb) / len(lsb), 1))
                         if self.request is None:
-                            plt.scatter(x_location, lsb_avg_value, color='k', marker='.', s=10)
+                            plt.scatter(x_location, lsb_avg_value, color="k", marker=".", s=10)
                         lsb_counts.append(lsb_avg_value)
 
                     # Average significance counts for the colours and round two 2 decimals
                     y_points.append(round(sum(counts) / self.channels_to_process, 2))
 
                     index += 1
-                    pixels = pixels[self.chunk:]
+                    pixels = pixels[self.chunk :]
                     success = True
         except Exception:
             success = False
 
         if success:
             if self.request is None:
-                plt.plot(x_points, y_points, 'm--', linewidth=1.0)
+                plt.plot(x_points, y_points, "m--", linewidth=1.0)
                 lsb_chi_path = path.join(self.working_directory, "LSB_chiqquare_attack.png")
-                plt.savefig(lsb_chi_path, bbox_inches='tight')
+                plt.savefig(lsb_chi_path, bbox_inches="tight")
                 plt.show()
             else:
                 chi_graph_data = {
-                    'type': 'colormap',
-                    'data': {
-                        'domain': [0, 100],
-                        'values': [y * 100 for y in y_points]
-                    }
+                    "type": "colormap",
+                    "data": {"domain": [0, 100], "values": [y * 100 for y in y_points]},
                 }
 
-                chires = ResultSection('LSB Chi Square Analysis.\t')
+                chires = ResultSection("LSB Chi Square Analysis.\t")
 
-                chires.add_subsection(ResultSection('Colour Map. 0==Not random, 100==Random',
-                                                    body_format=BODY_FORMAT.GRAPH_DATA,
-                                                    body=json.dumps(chi_graph_data)))
+                chires.add_subsection(
+                    ResultSection(
+                        "Colour Map. 0==Not random, 100==Random",
+                        body_format=BODY_FORMAT.GRAPH_DATA,
+                        body=json.dumps(chi_graph_data),
+                    )
+                )
 
                 pval_res = self.detect_sig_changes(y_points)
                 if pval_res:
@@ -385,7 +395,7 @@ class ImageInfo(object):
                         lsb.append(float(pbyte[-1]))
                     lsb_avg_value = round(sum(lsb) / len(lsb), 1)
                     lsb_points.append(lsb_avg_value)
-                    pixels = pixels[self.chunk:]
+                    pixels = pixels[self.chunk :]
                     success = True
 
             else:
@@ -393,7 +403,7 @@ class ImageInfo(object):
                 # If not greyscale, test each colour channel separately per chunk and then average
                 while len(pixels) != 0:
                     # Grab channel (i.e. R,G,B) pixels
-                    colours = self.get_colours(pixels[:self.chunk])
+                    colours = self.get_colours(pixels[: self.chunk])
                     lsb_counts = []
 
                     for c, pixels_flat in iter(colours.items()):
@@ -411,25 +421,23 @@ class ImageInfo(object):
                     # Average lsb counts for the colours and round two 2 decimals
                     lsb_points.append(round(sum(lsb_counts) / self.channels_to_process, 2))
 
-                    pixels = pixels[self.chunk:]
+                    pixels = pixels[self.chunk :]
                     success = True
         except Exception:
             success = False
 
         if success:
-            lsb_graph_data = {
-                'type': 'colormap',
-                'data': {
-                    'domain': [0, 100],
-                    'values': [y * 100 for y in lsb_points]
-                }
-            }
+            lsb_graph_data = {"type": "colormap", "data": {"domain": [0, 100], "values": [y * 100 for y in lsb_points]}}
 
-            lsbres = ResultSection('LSB Average Value Analysis.\t')
+            lsbres = ResultSection("LSB Average Value Analysis.\t")
 
-            lsbres.add_subsection(ResultSection('Closer to 0.5==Random, Closer to 0/100==Not Random.',
-                                                body_format=BODY_FORMAT.GRAPH_DATA,
-                                                body=json.dumps(lsb_graph_data)))
+            lsbres.add_subsection(
+                ResultSection(
+                    "Closer to 0.5==Random, Closer to 0/100==Not Random.",
+                    body_format=BODY_FORMAT.GRAPH_DATA,
+                    body=json.dumps(lsb_graph_data),
+                )
+            )
 
             pval_res = self.detect_sig_changes(lsb_points, thr_counter=0.80)
             if pval_res:
@@ -461,16 +469,16 @@ class ImageInfo(object):
         # Z =   num of pairs that are the same
 
         results = {
-            'P': 0,
-            'W': 0,
-            'X': 0,
-            'Y': 0,
-            'Z': 0,
-            'a': 0,
-            'b': 0,
-            'c': 0,
-            'final': float(0),
-            'rd': 0,
+            "P": 0,
+            "W": 0,
+            "X": 0,
+            "Y": 0,
+            "Z": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "final": float(0),
+            "rd": 0,
         }
 
         # Greyscale images
@@ -486,22 +494,22 @@ class ImageInfo(object):
                         s1 = self.iobject[wi, he]
                         s2 = self.iobject[wi + 1, he]
 
-                        results['P'] += 1
+                        results["P"] += 1
                         # Is Z?
                         if s1 == s2:
-                            results['Z'] += 1
+                            results["Z"] += 1
                             continue
-                        s1b = '{0:08b}'.format(s1)
-                        s2b = '{0:08b}'.format(s2)
+                        s1b = "{0:08b}".format(s1)
+                        s2b = "{0:08b}".format(s2)
                         # Is W?
                         if s1b[:6] == s2b[:6] and s1b[7] != s2b[7]:
-                            results['W'] += 1
+                            results["W"] += 1
                         # Is X? -- Lower value is odd
-                        if (s2b[7] == '0' and int(s2b) > int(s1b)) or (s2b[7] == '1' and int(s2b) < int(s1b)):
-                            results['X'] += 1
+                        if (s2b[7] == "0" and int(s2b) > int(s1b)) or (s2b[7] == "1" and int(s2b) < int(s1b)):
+                            results["X"] += 1
                         # Is Y? -- Lower value is even
-                        if (s2b[7] == '0' and int(s2b) < int(s1b)) or (s2b[7] == '1' and int(s2b) > int(s1b)):
-                            results['Y'] += 1
+                        if (s2b[7] == "0" and int(s2b) < int(s1b)) or (s2b[7] == "1" and int(s2b) > int(s1b)):
+                            results["Y"] += 1
 
                 # Pairs down image
                 for wi in range(width):
@@ -512,58 +520,58 @@ class ImageInfo(object):
                         s1 = self.iobject[wi, he]
                         s2 = self.iobject[wi, he + 1]
 
-                        results['P'] += 1
+                        results["P"] += 1
                         # Is Z?
                         if s1 == s2:
-                            results['Z'] += 1
+                            results["Z"] += 1
                             continue
-                        s1b = '{0:08b}'.format(s1)
-                        s2b = '{0:08b}'.format(s2)
+                        s1b = "{0:08b}".format(s1)
+                        s2b = "{0:08b}".format(s2)
                         # Is W?
                         if s1b[:6] == s2b[:6] and s1b[7] != s2b[7]:
-                            results['W'] += 1
+                            results["W"] += 1
                         # Is X?
-                        if (s2b[7] == '0' and int(s2b) > int(s1b)) or (s2b[7] == '1' and int(s2b) < int(s1b)):
-                            results['X'] += 1
+                        if (s2b[7] == "0" and int(s2b) > int(s1b)) or (s2b[7] == "1" and int(s2b) < int(s1b)):
+                            results["X"] += 1
                         # Is Y?
-                        if (s2b[7] == '0' and int(s2b) < int(s1b)) or (s2b[7] == '1' and int(s2b) > int(s1b)):
-                            results['Y'] += 1
+                        if (s2b[7] == "0" and int(s2b) < int(s1b)) or (s2b[7] == "1" and int(s2b) > int(s1b)):
+                            results["Y"] += 1
 
                 # quadratic equation is: ax ^ 2 + bx + c = 0
-                a = float(0.5 * (results['W'] + results['Z']))
-                results['a'] = a
-                b = float(2 * results['X'] - results['P'])
-                results['b'] = b
-                c = float(results['Y'] - results['X'])
-                results['c'] = c
+                a = float(0.5 * (results["W"] + results["Z"]))
+                results["a"] = a
+                b = float(2 * results["X"] - results["P"])
+                results["b"] = b
+                c = float(results["Y"] - results["X"])
+                results["c"] = c
 
                 # If a == 0, assume straight line
                 if a == 0:
-                    results['final'] = abs(float(c / b))
+                    results["final"] = abs(float(c / b))
                 else:
                     # Else take result as a curve
-                    discriminant = float(b ** 2) - (4 * a * c)
+                    discriminant = float(b**2) - (4 * a * c)
                     if discriminant >= 0:
                         rootpos = abs(float(((-1 * b) + math.sqrt(discriminant)) / (2 * a)))
                         rootneg = abs(float(((-1 * b) - math.sqrt(discriminant)) / (2 * a)))
 
                         # return root with the smallest absolute value (as per paper)
                         if rootpos <= rootneg:
-                            results['final'] = rootpos
+                            results["final"] = rootpos
                         else:
-                            results['final'] = rootneg
+                            results["final"] = rootneg
                     else:
-                        results['final'] = "Something likely wrong"
+                        results["final"] = "Something likely wrong"
 
                 # In Andrew Ker's paper, "Improved Detection of LSB Steganography in Grayscale Images" he suggests
                 # dropping the message length (quadraic formula) and using relative difference instead ((Q-Q')/(Q+Q')).
                 # Will be a Pvalue 0f 0.0 to 1.0
 
-                e = float(results['Y'])
-                o = float(results['X'])
+                e = float(results["Y"])
+                o = float(results["X"])
                 rd = abs((e - o) / (e + o))
 
-                results['rd'] = rd
+                results["rd"] = rd
                 results = {0: results}
 
             # Other images
@@ -578,22 +586,22 @@ class ImageInfo(object):
                         s2 = self.get_colours(list(self.iobject[wi + 1, he]), raw=True)
 
                         for k, i in iter(s1.items()):
-                            colour_results[k]['P'] += 1
+                            colour_results[k]["P"] += 1
                             # Is Z?
                             if i == s2[k]:
-                                colour_results[k]['Z'] += 1
+                                colour_results[k]["Z"] += 1
                                 continue
-                            s1b = '{0:08b}'.format(i)
-                            s2b = '{0:08b}'.format(s2[k])
+                            s1b = "{0:08b}".format(i)
+                            s2b = "{0:08b}".format(s2[k])
                             # Is W?
                             if s1b[:6] == s2b[:6] and s1b[7] != s2b[7]:
-                                colour_results[k]['W'] += 1
+                                colour_results[k]["W"] += 1
                             # Is X? -- Lower value is odd
-                            if (s2b[7] == '0' and int(s2b) > int(s1b)) or (s2b[7] == '1' and int(s2b) < int(s1b)):
-                                colour_results[k]['X'] += 1
+                            if (s2b[7] == "0" and int(s2b) > int(s1b)) or (s2b[7] == "1" and int(s2b) < int(s1b)):
+                                colour_results[k]["X"] += 1
                             # Is Y? -- Lower value is even
-                            if (s2b[7] == '0' and int(s2b) < int(s1b)) or (s2b[7] == '1' and int(s2b) > int(s1b)):
-                                colour_results[k]['Y'] += 1
+                            if (s2b[7] == "0" and int(s2b) < int(s1b)) or (s2b[7] == "1" and int(s2b) > int(s1b)):
+                                colour_results[k]["Y"] += 1
 
                 # Pairs down image
                 for wi in range(width):
@@ -603,56 +611,56 @@ class ImageInfo(object):
                         s2 = self.get_colours(list(self.iobject[wi, he + 1]), raw=True)
 
                         for k, i in iter(s1.items()):
-                            colour_results[k]['P'] += 1
+                            colour_results[k]["P"] += 1
                             # Is Z?
                             if i == s2[k]:
-                                colour_results[k]['Z'] += 1
+                                colour_results[k]["Z"] += 1
                                 continue
-                            s1b = '{0:08b}'.format(i)
-                            s2b = '{0:08b}'.format(s2[k])
+                            s1b = "{0:08b}".format(i)
+                            s2b = "{0:08b}".format(s2[k])
                             # Is W?
                             if s1b[:6] == s2b[:6] and s1b[7] != s2b[7]:
-                                colour_results[k]['W'] += 1
+                                colour_results[k]["W"] += 1
                             # Is X?
-                            if (s2b[7] == '0' and int(s2b) > int(s1b)) or (s2b[7] == '1' and int(s2b) < int(s1b)):
-                                colour_results[k]['X'] += 1
+                            if (s2b[7] == "0" and int(s2b) > int(s1b)) or (s2b[7] == "1" and int(s2b) < int(s1b)):
+                                colour_results[k]["X"] += 1
                             # Is Y?
-                            if (s2b[7] == '0' and int(s2b) < int(s1b)) or (s2b[7] == '1' and int(s2b) > int(s1b)):
-                                colour_results[k]['Y'] += 1
+                            if (s2b[7] == "0" and int(s2b) < int(s1b)) or (s2b[7] == "1" and int(s2b) > int(s1b)):
+                                colour_results[k]["Y"] += 1
 
                 for k, i in iter(colour_results.items()):
-                    a = float(0.5 * (colour_results[k]['W'] + colour_results[k]['Z']))
-                    colour_results[k]['a'] = a
-                    b = float(2 * colour_results[k]['X'] - colour_results[k]['P'])
-                    colour_results[k]['b'] = b
-                    c = float(colour_results[k]['Y'] - colour_results[k]['X'])
-                    colour_results[k]['c'] = c
+                    a = float(0.5 * (colour_results[k]["W"] + colour_results[k]["Z"]))
+                    colour_results[k]["a"] = a
+                    b = float(2 * colour_results[k]["X"] - colour_results[k]["P"])
+                    colour_results[k]["b"] = b
+                    c = float(colour_results[k]["Y"] - colour_results[k]["X"])
+                    colour_results[k]["c"] = c
 
                     # If a == 0, assume straight line
                     if a == 0:
-                        colour_results[k]['final'] = abs((float(c / b)))
+                        colour_results[k]["final"] = abs((float(c / b)))
                     else:
                         # Else take result as a curve
-                        discriminant = float(b ** 2) - (4 * a * c)
+                        discriminant = float(b**2) - (4 * a * c)
                         if discriminant >= 0:
                             rootpos = abs(float(((-1 * b) + math.sqrt(discriminant)) / (2 * a)))
                             rootneg = abs(float(((-1 * b) - math.sqrt(discriminant)) / (2 * a)))
 
                             # return root with the smallest absolute value (as per paper)
                             if rootpos <= rootneg:
-                                colour_results[k]['final'] = rootpos
+                                colour_results[k]["final"] = rootpos
                             else:
-                                colour_results[k]['final'] = rootneg
+                                colour_results[k]["final"] = rootneg
                         else:
-                            colour_results[k]['final'] = "Something likely wrong"
+                            colour_results[k]["final"] = "Something likely wrong"
 
                     # In Andrew Ker's paper, he suggests dropping the message length (quadraic formula) and using
                     # relative difference instead ((Q-Q')/(Q+Q')). Will be a value 0f 0.0 to 1.0
-                    e = float(colour_results[k]['Y'])
-                    o = float(colour_results[k]['X'])
+                    e = float(colour_results[k]["Y"])
+                    o = float(colour_results[k]["X"])
                     rd = abs((e - o) / (e + o))
 
-                    colour_results[k]['rd'] = rd
+                    colour_results[k]["rd"] = rd
 
                 results = colour_results
 
@@ -666,37 +674,99 @@ class ImageInfo(object):
             rdfinal = 0
             divd = self.channels_to_process
             for k, i in iter(results.items()):
-                if i['final'] == "Something likely wrong":
-                    final_body += "{0} Pixel Results: {1}\n".format(k, i['final'])
+                if i["final"] == "Something likely wrong":
+                    final_body += "{0} Pixel Results: {1}\n".format(k, i["final"])
                     divd -= 1
                 else:
-                    final_body += "{0} Pixel Results: {1}%\n".format(k, i['final'] * 100)
-                    lenfinal += i['final']
-                rdfinal += i['rd']
+                    final_body += "{0} Pixel Results: {1}%\n".format(k, i["final"] * 100)
+                    lenfinal += i["final"]
+                rdfinal += i["rd"]
             if divd == 0:
                 avg_lenfinal = 0
             else:
                 avg_lenfinal = float(lenfinal / divd) * 100
             avg_rdfinal = float(rdfinal / self.channels_to_process)
-            final_body += "Likelyhood of hidden message: {} (P value)." \
-                          "\nCombined length results: {}% of image possibly embedded with a hidden message." \
-                .format(avg_rdfinal, avg_lenfinal)
+            final_body += (
+                "Likelyhood of hidden message: {} (P value)."
+                "\nCombined length results: {}% of image possibly embedded with a hidden message.".format(
+                    avg_rdfinal, avg_lenfinal
+                )
+            )
             if self.result is not None:
-                self.working_result.add_subsection(ResultSection(title_text='LSB Couples Analysis',
-                                                                 body_format=BODY_FORMAT.MEMORY_DUMP,
-                                                                 body=final_body))
+                self.working_result.add_subsection(
+                    ResultSection(
+                        title_text="LSB Couples Analysis", body_format=BODY_FORMAT.MEMORY_DUMP, body=final_body
+                    )
+                )
             else:
                 self.log.info("\t {}".format(final_body))
 
         return
 
+    def NF(self):
+        # Detection based on the noise floor of the image
+        # Ref: https://github.com/target/strelka/blob/master/src/python/strelka/scanners/scan_nf.py
+        try:
+            # Convert image to HSV color space
+            np_array = np.frombuffer(self.request.file_contents, np.uint8)
+            np_image = cv2.imdecode(np_array, cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
+            image = cv2.cvtColor(np_image, cv2.COLOR_BGR2HSV)
+
+            # Calculate histogram of saturation channel
+            s = cv2.calcHist([image], [1], None, [256], [0, 256])
+
+            # Calculate percentage of pixels with saturation >= p
+            p = 0.05
+            s_perc = float(np.sum(s[int(p * 255.0) : -1])) / float(np.prod(image.shape[0:2]))
+
+            # Percentage threshold; above: valid image, below: noise
+            s_thr = 0.25
+            self.working_result.add_subsection(
+                ResultSection(
+                    "Noise Floor Analysis",
+                    body_format=BODY_FORMAT.KEY_VALUE,
+                    body={"percentage": s_perc, "threshold": s_thr, "dangerous": s_perc < s_thr},
+                )
+            )
+        except Exception as e:
+            self.log.error(f"Error loading image with cv2 library: {e}")
+
     def decloak(self):
         self.binary_pixels = list(self.convert_binary_string(self.imode, self.channels_to_process, self.ipixels))
         supported = {
-            1: {self.LSB_visual: ['CMYK', 'P', 'RGB', 'RGBA', ]},
-            2: {self.LSB_chisquare: ['CMYK', 'P', 'RGB', 'RGBA', ]},
-            3: {self.LSB_averages: ['CMYK', 'P', 'RGB', 'RGBA', ]},
-            4: {self.LSB_couples: ['CMYK', 'P', 'RGB', 'RGBA', ]},
+            1: {
+                self.LSB_visual: [
+                    "CMYK",
+                    "P",
+                    "RGB",
+                    "RGBA",
+                ]
+            },
+            2: {
+                self.LSB_chisquare: [
+                    "CMYK",
+                    "P",
+                    "RGB",
+                    "RGBA",
+                ]
+            },
+            3: {
+                self.LSB_averages: [
+                    "CMYK",
+                    "P",
+                    "RGB",
+                    "RGBA",
+                ]
+            },
+            4: {
+                self.LSB_couples: [
+                    "CMYK",
+                    "P",
+                    "RGB",
+                    "RGBA",
+                ]
+            },
+            5: {self.NF: ["RGB", "RGBA"]},
         }
         for k, d in sorted(iter(supported.items())):
             for mod, l in iter(d.items()):
