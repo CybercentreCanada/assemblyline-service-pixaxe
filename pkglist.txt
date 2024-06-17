@@ -7,17 +7,7 @@ libmagickwand-dev
 libgl1
 
 # Tesseract
-g++
-autoconf
-automake
-libtool
-pkg-config
-libpng-dev
-libtiff5-dev
-zlib1g-dev
-libleptonica-dev
-libpango1.0-dev
-build-essential
+tesseract-ocr
 
 # Used for decoding QR codes
 zbar-tools
