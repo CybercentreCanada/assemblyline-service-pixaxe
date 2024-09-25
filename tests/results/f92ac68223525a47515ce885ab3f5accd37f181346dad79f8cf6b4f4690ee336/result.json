@@ -21,7 +21,7 @@
         ],
         "body_config": {},
         "body_format": "IMAGE",
-        "classification": "TLP:CLEAR",
+        "classification": "TLP:C",
         "depth": 0,
         "heuristic": null,
         "promote_to": "SCREENSHOT",
@@ -34,7 +34,7 @@
         "body": null,
         "body_config": {},
         "body_format": "TEXT",
-        "classification": "TLP:CLEAR",
+        "classification": "TLP:C",
         "depth": 0,
         "heuristic": {
           "attack_ids": [],
