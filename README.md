@@ -10,57 +10,8 @@ This Assemblyline service provides image analysis.
 
 ## Service Details
 
-### Tesseract
-
-This program is a Optical Character Recognition (OCR) engine, which attempts to extract text from images
-
-Tesseract is licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
-
-Source code is found here: https://github.com/tesseract-ocr/tesseract
-
-AL outputs:
-
-- Text extracted and appended to file "output.txt"
-
-#### OCR Configuration
-In this service, you're allowed to override the default OCR terms from the [service base](https://github.com/CybercentreCanada/assemblyline-v4-service/blob/master/assemblyline_v4_service/common/ocr.py) using `ocr` key in the `config` block of the service manifest.
-
-##### Simple Term Override (Legacy)
-Let's say, I want to use a custom set of terms for `ransomware` detection. Then I can set the following:
-
-```yaml
-config:
-    ocr:
-        ransomware: ['bad1', 'bad2', ...]
-```
-
-This will cause the service to **only** use the terms I've specified when looking for `ransomware` terms. This is still subject to the hit threshold defined in the service base.
-
-##### Advanced Term Override
-Let's say, I want to use a custom set of terms for `ransomware` detection and I want to set the hit threshold to `1` instead of `2` (default). Then I can set the following:
-
-```yaml
-config:
-    ocr:
-        ransomware:
-            terms: ['bad1', 'bad2', ...]
-            threshold: 1
-```
-
-This will cause the service to **only** use the terms I've specified when looking for `ransomware` terms and is subject to the hit threshold I've defined.
-
-##### Term Inclusion/Exclusion
-Let's say, I want to add/remove a set of terms from the default set for `ransomware` detection. Then I can set the following:
-
-```yaml
-config:
-    ocr:
-        ransomware:
-            include: ['bad1', 'bad2', ...]
-            exclude: ['bank account']
-```
-
-This will cause the service to add the terms listed in `include` and remove the terms in `exclude` when looking for `ransomware` terms in OCR detection with the default set.
+### OCR
+This uses OCR for it's analysis, you can find information about OCR configurations [here](https://cybercentrecanada.github.io/assemblyline4_docs/administration/service_management/#ocr-configuration).
 
 
 ### Stenography Modules
@@ -118,58 +69,8 @@ Ce service de la ligne d'assemblage fournit une analyse d'image.
 
 ## Détails du service
 
-### Tesseract
-
-Ce programme est un moteur de reconnaissance optique de caractères (OCR) qui tente d'extraire du texte à partir d'images.
-
-Tesseract est soumis à la licence Apache, version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
-
-Le code source se trouve ici : https://github.com/tesseract-ocr/tesseract
-
-Résultats de l'AL :
-
-- Texte extrait et ajouté au fichier « output.txt ».
-
-#### Configuration de l'OCR
-Dans ce service, vous êtes autorisé à remplacer les termes OCR par défaut de la [base du service] (https://github.com/CybercentreCanada/assemblyline-v4-service/blob/master/assemblyline_v4_service/common/ocr.py) en utilisant la clé `ocr` dans le bloc `config` du manifeste du service.
-
-##### Remplacement d'un terme simple (héritage)
-Supposons que je veuille utiliser un ensemble de termes personnalisés pour la détection de `ransomware`. Je peux alors définir ce qui suit :
-
-```yaml
-config :
-    ocr :
-        ransomware : ['bad1', 'bad2', ...]
-```
-
-Ainsi, le service utilisera **uniquement** les termes que j'ai spécifiés lorsqu'il cherchera des termes de `ransomware`. Ceci est toujours soumis au seuil de réussite défini dans la base du service.
-
-##### Remplacement des termes avancés
-Supposons que je veuille utiliser un ensemble personnalisé de termes pour la détection de `ransomware` et que je veuille fixer le seuil de réussite à `1` au lieu de `2` (par défaut). Je peux alors définir ce qui suit :
-
-```yaml
-config :
-    ocr :
-        ransomware :
-            terms : ['bad1', 'bad2', ...]
-            threshold : 1
-```
-
-Le service utilisera **uniquement** les termes que j'ai spécifiés lors de la recherche de termes `ransomware` et sera soumis au seuil de réponse que j'ai défini.
-
-##### Inclusion/exclusion de termes
-Supposons que je veuille ajouter/supprimer un ensemble de termes de l'ensemble par défaut pour la détection de `ransomware`. Je peux alors définir ce qui suit :
-
-```yaml
-config :
-    ocr :
-        ransomware :
-            include : ['bad1', 'bad2', ...]
-            exclude : ['bank account']
-```
-
-Ainsi, le service ajoutera les termes listés dans `include` et supprimera les termes dans `exclude` lorsqu'il recherchera les termes `ransomware` dans la détection OCR avec le paramétrage par défaut.
-
+### OCR
+Ce service utilise l'OCR pour son analyse, vous pouvez trouver des informations sur les configurations de l'OCR [ici] (https://cybercentrecanada.github.io/assemblyline4_docs/administration/service_management/#ocr-configuration).
 
 ### Modules de sténographie
 
@@ -187,8 +88,6 @@ Analyse du bit le moins significatif (LSB) :
 - Moyennes LSB (idée tirée de : http://guillermito2.net/stegano/tools/)
 
 - Analyse de couples (code python créé en grande partie à partir du code java trouvé ici : https://github.com/b3dk7/StegExpose/blob/master/SamplePairs.java)
-
-Traduit avec DeepL.com (version gratuite)
 
 ## Variantes et étiquettes d'image
 
