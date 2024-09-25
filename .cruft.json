@@ -1,0 +1,23 @@
+{
+  "template": "https://github.com/CybercentreCanada/assemblyline-service-template.git",
+  "commit": "794c41c0ee3a4b7e65676d557da1290e4799e337",
+  "checkout": "badge/issues",
+  "context": {
+    "cookiecutter": {
+      "service_name": "pixaxe",
+      "__svc_name": "pixaxe",
+      "__repository": "assemblyline-service-pixaxe",
+      "__pkg_name": "pixaxe",
+      "__class_name": "Pixaxe",
+      "short_description": "This Assemblyline service provides image analysis.",
+      "short_description_fr": "Ce service de la ligne d'assemblage fournit une analyse d'image.",
+      "stage": "CORE",
+      "category": "Static Analysis",
+      "org_name_full": "CybercentreCanada",
+      "org_name_short": "cccs",
+      "license": "mit",
+      "_template": "https://github.com/CybercentreCanada/assemblyline-service-template.git"
+    }
+  },
+  "directory": null
+}

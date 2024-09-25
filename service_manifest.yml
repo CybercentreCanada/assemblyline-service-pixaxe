@@ -1,7 +1,6 @@
 name: Pixaxe
 version: $SERVICE_TAG
-description: >-
-  Image examination
+description: This Assemblyline service provides image analysis.
 accepts: image/.*
 rejects: empty|metadata/.*|image/unknown
 
