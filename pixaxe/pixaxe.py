@@ -19,13 +19,13 @@ from assemblyline_v4_service.common.result import (
 )
 from cairosvg import svg2png
 from multidecoder.decoders.network import find_emails, find_urls
-from PIL import Image as PILImage, ImageOps
-from PIL import ImageFile, UnidentifiedImageError
+from PIL import Image as PILImage
+from PIL import ImageFile, ImageOps, UnidentifiedImageError
 from stegano import lsb
 from wand.image import Image
 
-from pixaxe.steg import ImageInfo, NotSupported
 from pixaxe.helper import find_additional_content
+from pixaxe.steg import ImageInfo, NotSupported
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -219,7 +219,7 @@ class Pixaxe(ServiceBase):
                         fh.close()
 
                         request.add_extracted(
-                            fh.name, name=f"embedded_code_{i}", description=f"Decoded {code_type} content"
+                            fh.name, name=f"embedded_code_{i}", description=f"Decoded {code_type} content", safelist_interface=self.api_interface
                         )
         except ValueError:
             pass
