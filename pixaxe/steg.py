@@ -2,14 +2,18 @@
 Requires numpy, Pillow(PIL), python-matplotlib, scipy
 """
 
-import cv2
-import json
 import math
 from os import path
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from assemblyline_v4_service.common.result import BODY_FORMAT, ResultSection
+from assemblyline_v4_service.common.result import (
+    ResultGraphSection,
+    ResultJSONSection,
+    ResultMemoryDumpSection,
+    ResultSection,
+)
 from PIL import Image
 from scipy.stats import chisquare
 
@@ -27,9 +31,7 @@ class ImageInfo(object):
         self.log = logger
 
         if result:
-            self.working_result = ResultSection(
-                "Image Steganography Module Results:", body_format=BODY_FORMAT.MEMORY_DUMP
-            )
+            self.working_result = ResultSection("Image Steganography Module Results")
         else:
             self.result = result
 
@@ -352,20 +354,11 @@ class ImageInfo(object):
                 plt.savefig(lsb_chi_path, bbox_inches="tight")
                 plt.show()
             else:
-                chi_graph_data = {
-                    "type": "colormap",
-                    "data": {"domain": [0, 100], "values": [y * 100 for y in y_points]},
-                }
-
                 chires = ResultSection("LSB Chi Square Analysis.\t")
+                color_map_section = ResultGraphSection("Colour Map. 0==Not random, 100==Random")
+                color_map_section.set_colormap(0, 100, [y * 100 for y in y_points])
 
-                chires.add_subsection(
-                    ResultSection(
-                        "Colour Map. 0==Not random, 100==Random",
-                        body_format=BODY_FORMAT.GRAPH_DATA,
-                        body=json.dumps(chi_graph_data),
-                    )
-                )
+                chires.add_subsection(color_map_section)
 
                 pval_res = self.detect_sig_changes(y_points)
                 if pval_res:
@@ -427,17 +420,10 @@ class ImageInfo(object):
             success = False
 
         if success:
-            lsb_graph_data = {"type": "colormap", "data": {"domain": [0, 100], "values": [y * 100 for y in lsb_points]}}
-
             lsbres = ResultSection("LSB Average Value Analysis.\t")
-
-            lsbres.add_subsection(
-                ResultSection(
-                    "Closer to 0.5==Random, Closer to 0/100==Not Random.",
-                    body_format=BODY_FORMAT.GRAPH_DATA,
-                    body=json.dumps(lsb_graph_data),
-                )
-            )
+            lsbres_subsection = ResultGraphSection("Closer to 0.5==Random, Closer to 0/100==Not Random.")
+            lsbres_subsection.set_colormap(0, 100, [y * 100 for y in lsb_points])
+            lsbres.add_subsection(lsbres_subsection)
 
             pval_res = self.detect_sig_changes(lsb_points, thr_counter=0.80)
             if pval_res:
@@ -694,9 +680,7 @@ class ImageInfo(object):
             )
             if self.result is not None:
                 self.working_result.add_subsection(
-                    ResultSection(
-                        title_text="LSB Couples Analysis", body_format=BODY_FORMAT.MEMORY_DUMP, body=final_body
-                    )
+                    ResultMemoryDumpSection(title_text="LSB Couples Analysis", body=final_body)
                 )
             else:
                 self.log.info("\t {}".format(final_body))
@@ -721,13 +705,9 @@ class ImageInfo(object):
 
             # Percentage threshold; above: valid image, below: noise
             s_thr = 0.25
-            self.working_result.add_subsection(
-                ResultSection(
-                    "Noise Floor Analysis",
-                    body_format=BODY_FORMAT.KEY_VALUE,
-                    body={"percentage": s_perc, "threshold": s_thr, "dangerous": s_perc < s_thr},
-                )
-            )
+            section = ResultJSONSection("Noise Floor Analysis")
+            section.set_json({"percentage": s_perc, "threshold": s_thr, "dangerous": s_perc < s_thr})
+            self.working_result.add_subsection(section)
         except Exception as e:
             self.log.error(f"Error loading image with cv2 library: {e}")
 
