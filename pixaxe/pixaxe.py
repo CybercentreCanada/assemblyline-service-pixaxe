@@ -202,6 +202,10 @@ class Pixaxe(ServiceBase):
             if qr_results:
                 for i, qr_result in enumerate(qr_results.split("\n")):
                     code_type, code_value = qr_result.split(":", 1)
+                    if not code_type == "QR-Code":
+                        # Non-QR code found, skip
+                        continue
+
                     if not qr_detected_section:
                         qr_heur = Heuristic(3)
                         qr_detected_section = ResultSection(qr_heur.name, heuristic=qr_heur, parent=result)
