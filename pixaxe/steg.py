@@ -694,6 +694,9 @@ class ImageInfo(object):
             # Convert image to HSV color space
             np_array = np.frombuffer(self.request.file_contents, np.uint8)
             np_image = cv2.imdecode(np_array, cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
+            if np_image is None:
+                # Couldn't create image from buffer for noise floor analysis
+                return
             image = cv2.cvtColor(np_image, cv2.COLOR_BGR2HSV)
 
             # Calculate histogram of saturation channel
