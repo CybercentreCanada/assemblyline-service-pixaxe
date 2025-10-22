@@ -76,52 +76,47 @@ class Pixaxe(ServiceBase):
 
         im = PILImage.open(request.file_path)
 
-        i = 0
         p = im.getpalette()
         last_frame = im.convert("RGBA")
 
-        try:
-            while True:
-                """
-                If the GIF uses local colour tables, each frame will have its own palette.
-                If not, we need to apply the global palette to the new frame.
-                """
-                if p is not None and not im.getpalette() and im.mode in ("L", "LA", "P", "PA"):
-                    im.putpalette(p)
+        for i in range(im.n_frames):
+            im.seek(i)
+            """
+            If the GIF uses local colour tables, each frame will have its own palette.
+            If not, we need to apply the global palette to the new frame.
+            """
+            if p is not None and not im.getpalette() and im.mode in ("L", "LA", "P", "PA"):
+                im.putpalette(p)
 
-                new_frame = PILImage.new("RGBA", im.size)
+            new_frame = PILImage.new("RGBA", im.size)
 
-                """
-                Is this file a "partial"-mode GIF where frames update a region of a different size to the entire image?
-                If so, we need to construct the new frame by pasting it on top of the preceding frames.
-                """
-                if mode == "partial":
-                    new_frame.paste(last_frame)
+            """
+            Is this file a "partial"-mode GIF where frames update a region of a different size to the entire image?
+            If so, we need to construct the new frame by pasting it on top of the preceding frames.
+            """
+            if mode == "partial":
+                new_frame.paste(last_frame)
 
-                new_frame.paste(im, (0, 0), im.convert("RGBA"))
-                fh = NamedTemporaryFile(delete=False, suffix=".png")
-                new_frame.save(fh.name, "PNG")
-                fh.flush()
+            new_frame.paste(im, (0, 0), im.convert("RGBA"))
+            fh = NamedTemporaryFile(delete=False, suffix=".png")
+            new_frame.save(fh.name, "PNG")
+            fh.flush()
 
-                ocr_io = NamedTemporaryFile("w+", delete=False)
+            ocr_io = NamedTemporaryFile("w+", delete=False)
 
-                image_preview.add_image(
-                    fh.name,
-                    name=f"{request.file_name}_frame_{i}",
-                    description="GIF frame",
-                    ocr_heuristic_id=ocr_heuristic_id,
-                    ocr_io=ocr_io,
-                )
-                # Tag any network IOCs found in OCR output
-                self.tag_network_iocs(image_preview, ocr_io)
+            image_preview.add_image(
+                fh.name,
+                name=f"{request.file_name}_frame_{i}",
+                description="GIF frame",
+                ocr_heuristic_id=ocr_heuristic_id,
+                ocr_io=ocr_io,
+            )
+            # Tag any network IOCs found in OCR output
+            self.tag_network_iocs(image_preview, ocr_io)
 
-                _handle_ocr_output(ocr_io, fn_prefix=f"{request.file_name}_frame_{i}")
+            _handle_ocr_output(ocr_io, fn_prefix=f"{request.file_name}_frame_{i}")
 
-                i += 1
-                last_frame = new_frame
-                im.seek(im.tell() + 1)
-        except EOFError:
-            pass
+            last_frame = new_frame
 
     def execute(self, request: ServiceRequest):
         """Main Module. See README for details."""
