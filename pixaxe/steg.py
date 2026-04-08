@@ -11,8 +11,8 @@ import numpy as np
 from assemblyline_v4_service.common.result import (
     ResultGraphSection,
     ResultJSONSection,
-    ResultMemoryDumpSection,
     ResultSection,
+    ResultTextSection,
 )
 from PIL import Image
 from scipy.stats import chisquare
@@ -31,7 +31,7 @@ class ImageInfo(object):
         self.log = logger
 
         if result:
-            self.working_result = ResultSection("Image Steganography Module Results")
+            self.working_result = ResultTextSection("Image Steganography Module Results")
         else:
             self.result = result
 
@@ -680,7 +680,7 @@ class ImageInfo(object):
             )
             if self.result is not None:
                 self.working_result.add_subsection(
-                    ResultMemoryDumpSection(title_text="LSB Couples Analysis", body=final_body)
+                    ResultTextSection(title_text="LSB Couples Analysis", body=final_body)
                 )
             else:
                 self.log.info("\t {}".format(final_body))

@@ -1,0 +1,98 @@
+{
+  "extra": {
+    "drop_file": false,
+    "score": 0,
+    "sections": [
+      {
+        "auto_collapse": false,
+        "body": [
+          {
+            "img": {
+              "description": "Input file",
+              "name": "590bb7ded18df5fdb657c4b3a1761ac065a2b44a3b29139671261cd2cd2c29ab",
+              "sha256": "1c57b7a1f56608ef04112c52c58a4d3b4d3b69d880823013ee9523b65513493e"
+            },
+            "thumb": {
+              "description": "Input file (thumbnail)",
+              "name": "590bb7ded18df5fdb657c4b3a1761ac065a2b44a3b29139671261cd2cd2c29ab.thumb",
+              "sha256": "d6c0cec29305219d5c594a0ef689482a9192df2b6ead46763cdbecd5abb00153"
+            }
+          }
+        ],
+        "body_config": {},
+        "body_format": "IMAGE",
+        "classification": "TLP:C",
+        "depth": 0,
+        "heuristic": null,
+        "promote_to": "SCREENSHOT",
+        "tags": {
+          "network": {
+            "static": {
+              "uri": [
+                "https://github.com/Eric-Canas/QReader"
+              ]
+            }
+          }
+        },
+        "title_text": "Image Preview",
+        "zeroize_on_tag_safe": false
+      },
+      {
+        "auto_collapse": false,
+        "body": null,
+        "body_config": {},
+        "body_format": "TEXT",
+        "classification": "TLP:C",
+        "depth": 0,
+        "heuristic": {
+          "attack_ids": [],
+          "frequency": 1,
+          "heur_id": 3,
+          "score": 0,
+          "score_map": {},
+          "signatures": {
+            "uri_decoded_from_qr_code": 1
+          }
+        },
+        "promote_to": null,
+        "tags": {},
+        "title_text": "QR Code Detected",
+        "zeroize_on_tag_safe": false
+      }
+    ]
+  },
+  "files": {
+    "extracted": [],
+    "supplementary": [
+      {
+        "name": "590bb7ded18df5fdb657c4b3a1761ac065a2b44a3b29139671261cd2cd2c29ab",
+        "sha256": "1c57b7a1f56608ef04112c52c58a4d3b4d3b69d880823013ee9523b65513493e"
+      },
+      {
+        "name": "590bb7ded18df5fdb657c4b3a1761ac065a2b44a3b29139671261cd2cd2c29ab.thumb",
+        "sha256": "d6c0cec29305219d5c594a0ef689482a9192df2b6ead46763cdbecd5abb00153"
+      }
+    ]
+  },
+  "results": {
+    "heuristics": [
+      {
+        "attack_ids": [],
+        "heur_id": 3,
+        "signatures": [
+          "uri_decoded_from_qr_code"
+        ]
+      }
+    ],
+    "tags": {
+      "network.static.uri": [
+        {
+          "heur_id": null,
+          "signatures": [],
+          "value": "https://github.com/Eric-Canas/QReader"
+        }
+      ]
+    },
+    "temp_submission_data": {}
+  }
+}

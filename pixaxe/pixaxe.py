@@ -5,6 +5,7 @@ import subprocess
 from tempfile import NamedTemporaryFile
 from typing import Optional
 
+import cv2
 from assemblyline.common.str_utils import safe_str
 from assemblyline.odm.base import FULL_URI
 from assemblyline_v4_service.common.base import ServiceBase
@@ -14,13 +15,14 @@ from assemblyline_v4_service.common.result import (
     Result,
     ResultImageSection,
     ResultKeyValueSection,
-    ResultMemoryDumpSection,
     ResultSection,
+    ResultTextSection,
 )
 from cairosvg import svg2png
 from multidecoder.decoders.network import find_emails, find_urls
 from PIL import Image as PILImage
-from PIL import ImageFile, ImageOps, UnidentifiedImageError
+from PIL import ImageFile, UnidentifiedImageError
+from qreader import QReader
 from stegano import lsb
 from wand.image import Image
 
@@ -33,6 +35,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 class Pixaxe(ServiceBase):
     def __init__(self, config=None):
         super(Pixaxe, self).__init__(config)
+        self.qr_reader = QReader()
 
     def start(self):
         self.log.debug("Pixaxe service started")
@@ -187,38 +190,30 @@ class Pixaxe(ServiceBase):
 
             # Attempt QR code decoding
             qr_detected_section: Optional[ResultSection] = None
-            qr_results = subprocess.run(["zbarimg", "-q", displayable_image_path], capture_output=True).stdout.decode()
-            if not qr_results:
-                # Try decoding with a color invert of the image
-                with NamedTemporaryFile() as tmp_qr:
-                    ImageOps.invert(PILImage.open(request.file_path).convert("RGB")).save(tmp_qr.name, format="JPEG")
-                    qr_results = subprocess.run(["zbarimg", "-q", tmp_qr.name], capture_output=True).stdout.decode()
+            # Perform detection and decoding using the inverse colors of the image
+            image = cv2.cvtColor(~cv2.imread(displayable_image_path), cv2.COLOR_BGR2RGB)
+            qr_results = self.qr_reader.detect_and_decode(image)
 
             if qr_results:
-                for i, qr_result in enumerate(qr_results.split("\n")):
-                    code_type, code_value = qr_result.split(":", 1)
-                    if not code_type == "QR-Code":
-                        # Non-QR code found, skip
-                        continue
-
+                for i, qr_result in enumerate(qr_results):
                     if not qr_detected_section:
                         qr_heur = Heuristic(3)
                         qr_detected_section = ResultSection(qr_heur.name, heuristic=qr_heur, parent=result)
-                    if re.match(FULL_URI, code_value):
+                    if re.match(FULL_URI, qr_result):
                         qr_heur.add_signature_id("uri_decoded_from_qr_code")
                         # Tag URI
-                        image_preview.add_tag("network.static.uri", code_value)
+                        image_preview.add_tag("network.static.uri", qr_result)
                         if request.get_param("extract_ocr_uri"):
-                            request.add_extracted_uri("URI from QR code", code_value)
+                            request.add_extracted_uri("URI from QR code", qr_result)
                     else:
                         qr_heur.add_signature_id("file_decoded_from_qr_code")
                         # Write data to file
                         fh = NamedTemporaryFile(delete=False, mode="w")
-                        fh.write(code_value)
+                        fh.write(qr_result)
                         fh.close()
 
                         request.add_extracted(
-                            fh.name, name=f"embedded_code_{i}", description=f"Decoded {code_type} content", safelist_interface=self.api_interface
+                            fh.name, name=f"embedded_code_{i}", description="Decoded QR-Code content", safelist_interface=self.api_interface
                         )
         except ValueError:
             pass
@@ -226,7 +221,7 @@ class Pixaxe(ServiceBase):
             if displayable_image_path == request.file_path:
                 pillow_incompatible = True
 
-        steg_section = ResultMemoryDumpSection("Steganographical Analysis")
+        steg_section = ResultTextSection("Steganographical Analysis")
         # Attempt to extract files from the image
         extract_path = NamedTemporaryFile(delete=False)
         p = subprocess.run(
@@ -280,7 +275,7 @@ class Pixaxe(ServiceBase):
             # Find attached data
             additional_content = find_additional_content(request.file_contents)
             if additional_content:
-                ares = ResultMemoryDumpSection("Possible Appended Content Found")
+                ares = ResultTextSection("Possible Appended Content Found")
                 ares.add_line("{} Bytes of content found at end of image file".format(len(additional_content)))
                 ares.add_line("Text preview (up to 500 bytes):\n")
                 ares.add_line("{}".format(safe_str(additional_content)[0:500]))

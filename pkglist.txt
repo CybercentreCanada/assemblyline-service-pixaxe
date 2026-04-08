@@ -10,4 +10,4 @@ libgl1
 tesseract-ocr
 
 # Used for decoding QR codes
-zbar-tools
+libzbar0
