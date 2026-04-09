@@ -33,6 +33,11 @@ RUN wget https://github.com/RickdeJager/stegseek/releases/download/v0.6/stegseek
 RUN apt-get install -y ./stegseek_0.6-1.deb && rm -f ./stegseek_0.6-1.deb  && rm -rf /var/lib/apt/lists/*
 RUN wget https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt -O /opt/al_service/rockyou.txt
 
+# Retrieve weights from qrdet and embed them inside the image
+ADD https://github.com/Eric-Canas/qrdet/releases/download/v2.0_release/qrdet-s.pt /opt/al_support/qrdet-s.pt
+RUN echo -n "https://github.com/Eric-Canas/qrdet/releases/download/v2.0_release" >> /opt/al_support/current_release.txt
+RUN chown -R assemblyline:assemblyline /opt/al_support
+
 # Switch to assemblyline user
 USER assemblyline
 

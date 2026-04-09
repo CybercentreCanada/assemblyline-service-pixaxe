@@ -35,7 +35,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 class Pixaxe(ServiceBase):
     def __init__(self, config=None):
         super(Pixaxe, self).__init__(config)
-        self.qr_reader = QReader()
+        self.qr_reader = QReader(weights_folder="/opt/al_support")
 
     def start(self):
         self.log.debug("Pixaxe service started")
